@@ -28,6 +28,7 @@ const SUMLY_CONFIG = {
   // --- Cobrança e assinatura ---
   assinatura: {
     precoMensal: 'R$ 14,90',
+    precoAnual: 'R$ 120,00',
 
     // URL do backend na Vercel (sem barra no final).
     // Deixando vazio, o app cai no modo Pix manual.
