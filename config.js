@@ -21,9 +21,9 @@ const SUMLY_CONFIG = {
   //
   // Depois registre no Console do Firebase → Build → App Check.
   appCheck: {
-    tipo: 'enterprise',   // 'enterprise' ou 'v3'
-    siteKey: ''
-  },
+  tipo: 'enterprise',
+  siteKey: '6LcAycstAAAAAJGEMbyK-bmMTCdCiXt7HZi5ft7e'
+},,
 
   // --- Cobrança e assinatura ---
   assinatura: {
