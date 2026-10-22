@@ -53,6 +53,13 @@
     --sombra: 0 1px 3px rgba(0,0,0,0.06);
   }
   * { box-sizing: border-box; }
+  /* Listas nativas (menu do seletor de mês, calendário, barras de rolagem) no
+     mesmo tema do app. Sem isso o navegador abria a lista com fundo branco e
+     o texto claro do tema escuro ficava ilegível. */
+  html { color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
+  select option { background-color: var(--bg-elevado); color: var(--texto); }
+  select option:checked { background-color: var(--azul); color: var(--sobre-cor); }
   /* Botões e campos herdam a fonte do app (antes os botões saíam em Arial) */
   button, input, select, textarea { font-family: inherit; }
   a, a:visited { color: var(--azul); }
