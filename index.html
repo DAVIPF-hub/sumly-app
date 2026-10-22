@@ -14,8 +14,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 
 <!-- Suas configurações (chaves, preço, contatos). Este arquivo é seu e não é
      sobrescrito nas atualizações do app. -->
@@ -26,6 +26,10 @@
     --bg: #0B0E14; --bg-card: #161C2A; --bg-elevado: #1E2535;
     --texto: #ECEFF3; --texto-suave: #8B95A5; --borda: #262B36;
     --azul: #3DDC97; --azul-glow: rgba(61,220,151,0.12);
+    /* Texto sobre cores cheias (botões, abas ativas, selos). No tema escuro o
+       verde é claro, então o texto em cima dele precisa ser escuro: branco dava
+       1,8:1 de contraste; este dá 10,7:1. */
+    --sobre-cor: #06140E;
     --verde: #00B87C; --verde-glow: rgba(0,184,124,0.12);
     --acento: #5BA0FF; --acento-glow: rgba(91,160,255,0.12);
     --vermelho: #FF6B6B; --vermelho-glow: rgba(255,107,107,0.10);
@@ -36,17 +40,30 @@
   }
   :root[data-theme="light"] {
     --bg: #F7F9FC; --bg-card: #FFFFFF; --bg-elevado: #FFFFFF;
-    --texto: #202531; --texto-suave: #8A94A6; --borda: #E3E8EF;
-    --azul: #00A36C; --azul-glow: rgba(0,163,108,0.10);
-    --verde: #00875A; --verde-glow: rgba(0,135,90,0.10);
+    /* Tons escurecidos para passar no contraste mínimo (4,5:1) sobre branco */
+    --texto: #202531; --texto-suave: #667085; --borda: #E3E8EF;
+    --azul: #007A52; --azul-glow: rgba(0,122,82,0.10);
+    --verde: #00774F; --verde-glow: rgba(0,119,79,0.10);
+    --sobre-cor: #FFFFFF;
     --acento: #3B7DF5; --acento-glow: rgba(59,125,245,0.10);
-    --vermelho: #E4572E; --vermelho-glow: rgba(228,87,46,0.08);
-    --dourado: #C9971F; --dourado-glow: rgba(201,151,31,0.08);
+    --vermelho: #C2410C; --vermelho-glow: rgba(194,65,12,0.08);
+    --dourado: #9A6B00; --dourado-glow: rgba(154,107,0,0.08);
     --laranja-bg: #FCE4B4; --laranja-txt: #B36B00;
-    --cinza-bg: #EEEEEE; --cinza-txt: #8A94A6;
+    --cinza-bg: #EEEEEE; --cinza-txt: #667085;
     --sombra: 0 1px 3px rgba(0,0,0,0.06);
   }
   * { box-sizing: border-box; }
+  /* Botões e campos herdam a fonte do app (antes os botões saíam em Arial) */
+  button, input, select, textarea { font-family: inherit; }
+  a, a:visited { color: var(--azul); }
+  /* Links com cara de botão secundário (ex: Política e Termos em Ajustes) */
+  a.secundario { display: block; margin-top: 9px; width: 100%; padding: 11px; background: transparent; color: var(--texto); border: 1px solid var(--borda); border-radius: 12px; font-size: 13.5px; font-weight: 700; text-align: center; text-decoration: none; }
+  /* Saldo negativo: vermelho, nunca verde */
+  .card-resumo.saldo-negativo.saldo-negativo { --cor: var(--vermelho); --cor-glow: var(--vermelho-glow); } /* classe repetida = vence o .cor-azul declarado mais abaixo */
+  /* Botão neutro dos itens de Compras */
+  /* Botões secundários das listas (Editar, Duplicar, Reenviar...): antes não tinham
+     estilo e saíam como botão branco do navegador, chamando mais atenção que a ação principal */
+  .btn-status-toggle.sem, .btn-status-toggle.neutro { background: transparent; color: var(--texto); border: 1px solid var(--borda); }
   html, body { margin: 0; padding: 0; font-family: -apple-system,"Segoe UI",Roboto,Arial,sans-serif; background: var(--bg); color: var(--texto); }
   #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 82px; position: relative; }
 
@@ -58,9 +75,9 @@
 
   .user-menu-desktop { display: none; position: relative; }
   .user-menu-btn { display: flex; align-items: center; gap: 8px; background: var(--bg-elevado); border: 1px solid var(--borda); border-radius: 10px; padding: 6px 12px 6px 6px; cursor: pointer; color: var(--texto); font-weight: 700; font-size: 13px; }
-  .avatar-iniciais { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), var(--azul)); color: white; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.25); overflow: hidden; }
+  .avatar-iniciais { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), var(--azul)); color: var(--sobre-cor); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.25); overflow: hidden; }
   .avatar-iniciais img { width: 100%; height: 100%; object-fit: cover; }
-  .avatar-perfil-preview { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), var(--azul)); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; flex-shrink: 0; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+  .avatar-perfil-preview { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), var(--azul)); color: var(--sobre-cor); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; flex-shrink: 0; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
   .avatar-perfil-preview img { width: 100%; height: 100%; object-fit: cover; }
   .user-menu-btn .caret { color: var(--texto-suave); font-size: 10px; }
   .user-menu-dropdown { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--bg-card); border: 1px solid var(--borda); border-radius: 12px; padding: 6px; min-width: 200px; box-shadow: var(--sombra); z-index: 40; }
@@ -79,7 +96,7 @@
   input::placeholder, textarea::placeholder { color: var(--texto-suave); }
   .hint { font-size: 11.5px; color: var(--texto-suave); margin-top: 5px; line-height: 1.5; }
 
-  button.principal { margin-top: 16px; width: 100%; padding: 13px; background: var(--azul); color: white; border: none; border-radius: 12px; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+  button.principal { margin-top: 16px; width: 100%; padding: 13px; background: var(--azul); color: var(--sobre-cor); border: none; border-radius: 12px; font-size: 14.5px; font-weight: 700; cursor: pointer; }
   button.principal:disabled { opacity: 0.6; }
   button.secundario { margin-top: 9px; width: 100%; padding: 11px; background: transparent; color: var(--texto); border: 1px solid var(--borda); border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
   button.link-perigo { color: var(--vermelho); border-color: var(--vermelho); background: transparent; }
@@ -91,7 +108,7 @@
 
   #toast { position: fixed; left: 50%; bottom: 94px; transform: translateX(-50%); max-width: 420px; width: calc(100% - 32px); background: var(--bg-elevado); color: var(--texto); border: 1px solid var(--borda); padding: 11px 15px; border-radius: 12px; font-size: 13px; display: none; align-items: center; justify-content: space-between; gap: 10px; z-index: 60; box-shadow: var(--sombra); }
   #toast-texto { text-align: left; }
-  #toast-acao { flex-shrink: 0; background: var(--azul); color: white; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 700; font-size: 12px; cursor: pointer; }
+  #toast-acao { flex-shrink: 0; background: var(--azul); color: var(--sobre-cor); border: none; border-radius: 8px; padding: 6px 12px; font-weight: 700; font-size: 12px; cursor: pointer; }
   #toast.ok { border-color: var(--verde); color: var(--verde); }
   #toast.erro { border-color: var(--vermelho); color: var(--vermelho); }
 
@@ -152,7 +169,7 @@
   .lista-itens .remover { color: var(--vermelho); cursor: pointer; font-weight: 700; }
   .linha-adicionar { display: flex; gap: 6px; margin-top: 6px; }
   .linha-adicionar input { flex: 1; }
-  .linha-adicionar button { margin: 0; width: auto; padding: 0 12px; background: var(--azul); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; }
+  .linha-adicionar button { margin: 0; width: auto; padding: 0 12px; background: var(--azul); color: var(--sobre-cor); border: none; border-radius: 8px; cursor: pointer; font-weight: 700; }
 
   .linha-valor-config { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: var(--bg-card); border: 1px solid var(--borda); border-radius: 10px; padding: 9px 11px; }
   .linha-valor-config .rotulo { font-weight: 700; font-size: 12.5px; }
@@ -187,7 +204,7 @@
 
   .toggle-duas { display: flex; gap: 6px; margin-bottom: 14px; }
   .toggle-duas div { flex: 1; text-align: center; padding: 9px; border: 1px solid var(--borda); border-radius: 10px; cursor: pointer; color: var(--texto-suave); font-weight: 700; font-size: 12.5px; }
-  .toggle-duas div.active { background: var(--azul); color: white; border-color: var(--azul); }
+  .toggle-duas div.active { background: var(--azul-glow); color: var(--azul); border-color: var(--azul); }
 
   /* ---- Sub-abas de Ajustes ---- */
   .subnav-ajustes {
@@ -201,7 +218,7 @@
     background: var(--bg-card); color: var(--texto-suave); font-weight: 700; font-size: 12.5px;
     cursor: pointer; white-space: nowrap; transition: .15s;
   }
-  .subnav-btn.active { background: var(--azul); color: white; border-color: var(--azul); box-shadow: 0 2px 10px var(--azul-glow); }
+  .subnav-btn.active { background: var(--azul-glow); color: var(--azul); border-color: var(--azul); }
   .subtab-conteudo { display: none; animation: subtab-entrar .18s ease; }
   .subtab-conteudo.active { display: block; }
   @keyframes subtab-entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -282,7 +299,7 @@
   .paywall-lista li span { font-size: 17px; }
   .paywall-preco {
     text-align: center; padding: 14px; border-radius: 14px; margin-bottom: 16px;
-    background: linear-gradient(135deg, var(--verde), var(--azul)); color: #fff;
+    background: linear-gradient(135deg, var(--verde), var(--azul)); color: var(--sobre-cor);
   }
   .pp-valor { font-size: 27px; font-weight: 800; display: block; letter-spacing: -0.5px; }
   .pp-periodo { font-size: 12px; opacity: .9; font-weight: 600; }
@@ -295,13 +312,13 @@
   }
   .btn-whatsapp {
     display: block; margin-top: 10px; padding: 11px; border-radius: 10px; text-decoration: none;
-    background: var(--verde); color: #fff; font-weight: 700; font-size: 13px;
+    background: var(--verde); color: var(--sobre-cor); font-weight: 700; font-size: 13px;
   }
   .badge-plano {
     display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;
     font-size: 10.5px; font-weight: 800; margin-left: 8px;
   }
-  .badge-plano.premium { background: linear-gradient(135deg, var(--verde), var(--azul)); color: #fff; }
+  .badge-plano.premium { background: linear-gradient(135deg, var(--verde), var(--azul)); color: var(--sobre-cor); }
   .badge-plano.gratis { background: var(--cinza-bg); color: var(--cinza-txt); }
 
   /* ---- Painel de detalhes do financiamento ---- */
@@ -326,7 +343,7 @@
   .lr-campos #lr-desc { flex: 1.6; min-width: 0; }
   .lr-campos #lr-valor { flex: 1; min-width: 0; }
   .lr-campos button {
-    flex: 0 0 auto; background: var(--azul); color: #fff; border: none; border-radius: 10px;
+    flex: 0 0 auto; background: var(--azul); color: var(--sobre-cor); border: none; border-radius: 10px;
     padding: 0 18px; font-weight: 700; font-size: 13.5px; cursor: pointer;
   }
   .lr-campos button:disabled { opacity: .6; }
@@ -337,7 +354,7 @@
     padding: 6px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; color: var(--texto-suave);
     transition: .15s;
   }
-  .lr-essenc-btn.active { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .lr-essenc-btn.active { background: var(--azul); border-color: var(--azul); color: var(--sobre-cor); }
   .lr-sugestao b { color: var(--azul); }
   .lr-atalhos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
   .lr-atalho {
@@ -451,7 +468,7 @@
   /* ---- Chamadas para o Premium ---- */
   .btn-premium-topo {
     display: none; align-items: center; gap: 6px; flex-shrink: 0;
-    background: linear-gradient(135deg, var(--verde), var(--azul)); color: #fff;
+    background: linear-gradient(135deg, var(--verde), var(--azul)); color: var(--sobre-cor);
     border: none; border-radius: 20px; padding: 7px 14px;
     font-size: 12px; font-weight: 800; cursor: pointer;
     box-shadow: 0 2px 10px rgba(61,220,151,.25); transition: transform .15s, box-shadow .15s;
@@ -478,7 +495,7 @@
   .cp-texto { font-size: 12.5px; color: var(--texto-suave); line-height: 1.55; margin-bottom: 13px; position: relative; }
   .cp-acoes { display: flex; align-items: center; gap: 10px; position: relative; flex-wrap: wrap; }
   .cp-botao {
-    background: linear-gradient(135deg, var(--verde), var(--azul)); color: #fff; border: none;
+    background: linear-gradient(135deg, var(--verde), var(--azul)); color: var(--sobre-cor); border: none;
     border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 12.5px; cursor: pointer;
   }
   .cp-dispensar {
@@ -489,7 +506,7 @@
   .sino-btn { position: relative; }
   .sino-badge {
     position: absolute; top: 4px; right: 4px; min-width: 15px; height: 15px;
-    border-radius: 9px; background: var(--vermelho); color: #fff;
+    border-radius: 9px; background: var(--vermelho); color: var(--sobre-cor);
     font-size: 9.5px; font-weight: 800; line-height: 15px; text-align: center;
     padding: 0 3px; display: none; border: 2px solid var(--bg-elevado);
   }
@@ -524,7 +541,7 @@
     border: none; border-radius: 8px; padding: 7px 13px;
     font-size: 11.5px; font-weight: 700; cursor: pointer; margin: 0; width: auto;
   }
-  .pn-aceitar { background: var(--verde); color: #fff; }
+  .pn-aceitar { background: var(--verde); color: var(--sobre-cor); }
   .pn-recusar { background: var(--bg-elevado); color: var(--texto-suave); border: 1px solid var(--borda) !important; }
   .pn-vazio { text-align: center; color: var(--texto-suave); font-size: 12.5px; padding: 26px 14px; font-style: italic; }
 
@@ -557,8 +574,8 @@
   }
   [data-theme="light"] .tt-bolinha { left: 3px; }
   [data-theme="dark"] .tt-bolinha { left: calc(50% + 2px); }
-  [data-theme="dark"] .tt-opcao[data-tema="dark"] { color: #fff; }
-  [data-theme="light"] .tt-opcao[data-tema="light"] { color: #fff; }
+  [data-theme="dark"] .tt-opcao[data-tema="dark"] { color: var(--sobre-cor); }
+  [data-theme="light"] .tt-opcao[data-tema="light"] { color: var(--sobre-cor); }
 
   /* No celular o toggle fica no topo; o rodapé da sidebar só existe no desktop */
   .nav-rodape { display: none; }
@@ -655,7 +672,7 @@
   /* ---- Relatório mensal ---- */
   .rel-destaque {
     background: linear-gradient(135deg, var(--verde), var(--azul));
-    border-radius: 14px; padding: 18px; text-align: center; color: #fff; margin-bottom: 16px;
+    border-radius: 14px; padding: 18px; text-align: center; color: var(--sobre-cor); margin-bottom: 16px;
   }
   .rel-destaque .rd-rotulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; opacity: .9; }
   .rel-destaque .rd-valor { font-size: 29px; font-weight: 800; letter-spacing: -.8px; margin: 4px 0 2px; }
@@ -723,10 +740,10 @@
   .dash-destaque-rotulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; opacity: .92; }
   .dash-destaque-valor { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-top: 6px; }
   .dash-destaque-sub { font-size: 11px; opacity: .85; font-weight: 600; margin-top: 3px; }
-  .grad-saldo { background: linear-gradient(135deg, #2F7BE8, #5BA0FF); }
-  .grad-entrada { background: linear-gradient(135deg, #00A36C, #3DDC97); }
-  .grad-despesa { background: linear-gradient(135deg, #D6452C, #FF7A5C); }
-  .grad-invest { background: linear-gradient(135deg, #0E9B8A, #2FD9C0); }
+  .grad-saldo { background: linear-gradient(135deg, #1F5FD1, #2F6FE0); }
+  .grad-entrada { background: linear-gradient(135deg, #047857, #06875F); }
+  .grad-despesa { background: linear-gradient(135deg, #B93A22, #D0432A); }
+  .grad-invest { background: linear-gradient(135deg, #0B7A6E, #0D8275); }
 
   @media (min-width: 900px) {
     .dash-destaques { grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -805,7 +822,7 @@
       transition: background .15s, color .15s;
     }
     nav.bottomnav button[data-tab]:hover { background: var(--bg-card); color: var(--texto); }
-    nav.bottomnav button[data-tab].active { background: var(--azul); color: #fff; }
+    nav.bottomnav button[data-tab].active { background: var(--azul); color: var(--sobre-cor); }
     nav.bottomnav button[data-tab].active .ic { opacity: 1; }
     nav.bottomnav button[data-tab] .emoji { font-size: 15px; opacity: .85; margin: 0; }
 
@@ -861,6 +878,83 @@
     #tab-dashboard.active { grid-template-columns: repeat(3, 1fr); }
     #tab-dashboard.active > .grafico-card.destaque-ano { grid-column: 1 / -1; }
   }
+
+  /* ===================== Design — etapa 2 ===================== */
+  /* Seletor de mês único: ‹ Outubro 2026 › */
+  .seletor-mes { display: flex; align-items: center; gap: 2px; background: var(--bg-elevado); border: 1px solid var(--borda); border-radius: 12px; padding: 2px; }
+  .seletor-mes .sm-seta { width: 40px; height: 40px; border: none; background: none; color: var(--texto); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; flex-shrink: 0; }
+  .seletor-mes .sm-seta:disabled { opacity: .3; cursor: default; }
+  .seletor-mes .sm-seta:not(:disabled):hover { background: var(--bg-card); }
+  .seletor-mes select.sm-lista { width: auto; min-width: 0; border: none; background: none; padding: 8px 2px; font-weight: 700; font-size: 14px; text-align: center; text-align-last: center; appearance: none; -webkit-appearance: none; cursor: pointer; color: var(--texto); }
+  .dash-filtros select.oculto-por-seletor { display: none; }
+
+  /* Início: Resumo | Análises */
+  .seg-inicio { display: inline-flex; background: var(--bg-elevado); border: 1px solid var(--borda); border-radius: 12px; padding: 3px; gap: 2px; flex-shrink: 0; }
+  .seg-inicio button { border: none; background: none; color: var(--texto-suave); font-weight: 700; font-size: 13px; padding: 0 14px; min-height: 38px; border-radius: 9px; cursor: pointer; margin: 0; width: auto; }
+  .seg-inicio button.ativo { background: var(--bg-card); color: var(--texto); box-shadow: var(--sombra); }
+  #tab-dashboard .dash-destaques { display: none; } /* os mesmos números já estão no Resumo */
+
+  /* Orçamento: lista com barra de progresso */
+  .lista-orcamento { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  .orc-item { background: var(--bg-card); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px; }
+  .orc-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .orc-nome { font-weight: 700; font-size: 13.5px; }
+  .orc-valores { font-size: 12.5px; color: var(--texto-suave); white-space: nowrap; }
+  .orc-valores b { color: var(--texto); font-size: 13.5px; }
+  .orc-barra { height: 6px; background: var(--bg-elevado); border-radius: 3px; margin: 9px 0 8px; overflow: hidden; }
+  .orc-barra > div { height: 100%; border-radius: 3px; background: var(--verde); }
+  .orc-barra > div.atencao { background: var(--dourado); }
+  .orc-barra > div.ultrapassou { background: var(--vermelho); }
+  .orc-rodape { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--texto-suave); gap: 8px; margin-top: 6px; }
+
+  /* Menu "Mais" */
+  .menu-mais { display: flex; flex-direction: column; gap: 8px; }
+  .menu-mais button { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: var(--bg-card); border: 1px solid var(--borda); border-radius: 14px; padding: 14px; color: var(--texto); cursor: pointer; margin: 0; min-height: 60px; }
+  .menu-mais button b { display: block; font-size: 14.5px; }
+  .menu-mais button small { display: block; font-size: 12px; color: var(--texto-suave); margin-top: 2px; font-weight: 400; }
+
+  /* Ajustes → Aparência */
+  .linha-aparencia { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-card); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; font-weight: 600; }
+  .linha-aparencia .tema-toggle.compacto { width: 76px; height: 40px; border-radius: 20px; }
+  .linha-aparencia .tema-toggle.compacto .tt-bolinha { border-radius: 18px; }
+
+  @media (max-width: 899px) {
+    /* Barra inferior: Início, Investir, [Lançar], Compras, Mais */
+    nav.bottomnav button[data-tab="dashboard"], nav.bottomnav button[data-tab="dividas"] { display: none; }
+    nav.bottomnav button[data-tab="inicio"] { order: 1; }
+    nav.bottomnav button[data-tab="investimento"] { order: 2; }
+    nav.bottomnav button[data-tab="despesa"] { order: 3; }
+    nav.bottomnav button[data-tab="compras"] { order: 4; }
+    nav.bottomnav button[data-tab="mais"] { order: 5; }
+    nav.bottomnav button[data-tab] { font-size: 11px; }
+    nav.bottomnav button[data-tab="despesa"] .emoji { width: 46px; height: 46px; border-radius: 50%; background: var(--azul); color: var(--sobre-cor); display: flex; align-items: center; justify-content: center; margin-top: -20px; box-shadow: 0 6px 16px rgba(0,0,0,0.35); }
+    nav.bottomnav button[data-tab="despesa"].active { background: none; color: var(--texto); }
+    /* Tema saiu do cabeçalho (está em Ajustes → Perfil); alvos de toque de 44px */
+    header.topbar #btn-tema { display: none; }
+    button.icon-btn { width: 44px; height: 44px; border-radius: 12px; }
+    .dash-exportar { min-height: 44px; }
+    .dash-cabecalho { flex-wrap: wrap; gap: 10px; }
+    .dash-cabecalho > .seg-inicio { width: 100%; }
+    .seg-inicio button { flex: 1; }
+    .dash-cabecalho .dash-filtros { flex: 1; flex-wrap: nowrap; }
+    .dash-filtros .seletor-mes { flex: 1; min-width: 0; justify-content: space-between; }
+    .dash-cabecalho .dash-filtros { min-width: 0; width: 100%; }
+    .seletor-mes select.sm-lista { flex: 1; min-width: 0; width: 100%; }
+    /* Tabelas viram cartões */
+    table.tabela-app.responsiva, table.tabela-app.responsiva tbody { display: block; background: none; }
+    table.tabela-app.responsiva thead { display: none; }
+    table.tabela-app.responsiva tr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 10px; background: var(--bg-card); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+    table.tabela-app.responsiva td { border: none; padding: 0; font-size: 13px; }
+    table.tabela-app.responsiva td:first-child { grid-column: 1 / 3; font-weight: 700; font-size: 13.5px; }
+    table.tabela-app.responsiva td:last-child { grid-column: 3; grid-row: 1; justify-self: end; align-self: start; }
+    table.tabela-app.responsiva td[data-rotulo]::before { content: attr(data-rotulo); display: block; font-size: 10.5px; color: var(--texto-suave); font-weight: 600; margin-bottom: 2px; }
+    #tab-investimento .cards-row { display: grid; grid-template-columns: 1fr 1fr; }
+    .card-mini .valor { white-space: nowrap; }
+  }
+  @media (min-width: 900px) {
+    nav.bottomnav button[data-tab="mais"], nav.bottomnav button[data-tab="dashboard"] { display: none; }
+    .lista-orcamento { display: grid; grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -895,21 +989,12 @@
           <input type="text" id="cadastro-nome" placeholder="Seu nome completo">
           <label>Telefone (opcional)</label>
           <input type="tel" id="cadastro-telefone" placeholder="(11) 91234-5678">
-          <label>Sexo (opcional)</label>
-          <select id="cadastro-sexo">
-            <option value="">Prefiro não informar</option>
-            <option value="feminino">Feminino</option>
-            <option value="masculino">Masculino</option>
-            <option value="outro">Outro</option>
-          </select>
-          <label>Data de nascimento (opcional)</label>
-          <input type="date" id="cadastro-nascimento">
         </div>
 
         <label>E-mail</label>
         <input type="email" id="login-email" placeholder="voce@email.com">
         <label>Senha</label>
-        <input type="password" id="login-senha" placeholder="Mínimo 8 caracteres">
+        <input type="password" id="login-senha" placeholder="Sua senha">
         <ul class="requisitos-senha" id="requisitos-senha" style="display:none;">
           <li data-req="tamanho">Pelo menos 8 caracteres</li>
           <li data-req="maiuscula">Uma letra maiúscula</li>
@@ -937,8 +1022,8 @@
       <div class="aceite-topo">
         <img src="logo.svg" alt="" class="aceite-logo">
         <div>
-          <h2>Antes de criar sua conta</h2>
-          <p class="aceite-sub">Leia nossos termos e nossa política de privacidade. Role até o fim para continuar.</p>
+          <h2 id="aceite-titulo">Antes de criar sua conta</h2>
+          <p class="aceite-sub" id="aceite-sub">Leia nossos termos e nossa política de privacidade. Role até o fim para continuar.</p>
         </div>
       </div>
 
@@ -947,36 +1032,32 @@
         <p><b>O que é o Sumly.</b> Uma ferramenta para organizar as finanças da casa: despesas, receitas, investimentos, dívidas e compras — sozinho ou compartilhado com quem mora com você.</p>
 
         <div class="aceite-alerta">
-          <b>O Sumly não é uma instituição financeira.</b> Não movimentamos dinheiro nem damos consultoria de investimentos. Cálculos de juros, quitação e projeções são estimativas — confirme sempre os valores oficiais com seu banco antes de decidir qualquer coisa.
+          <b>O Sumly não é uma instituição financeira.</b> Não movimentamos dinheiro nem damos consultoria de investimentos. Cálculos de juros, quitação e projeções são estimativas — confirme sempre os valores oficiais com seu banco antes de decidir.
         </div>
 
-        <p><b>Sua conta.</b> Você precisa ter 18 anos ou mais, fornecer informações verdadeiras e manter sua senha em segurança. Avise-nos se suspeitar de uso não autorizado.</p>
+        <p><b>Sua conta.</b> Você precisa ter 18 anos ou mais, fornecer informações verdadeiras e manter sua senha em segurança. Seu nome aparece para as pessoas das Casas de que você participa.</p>
 
         <p><b>Uso aceitável.</b> Não tente acessar dados de outras pessoas, burlar as regras de segurança, sobrecarregar o serviço com ferramentas automatizadas ou usar o app para atividades ilícitas.</p>
 
-        <p><b>Planos.</b> O plano gratuito permite uso individual com limites. O Premium é uma assinatura mensal sem fidelidade — você pode parar de renovar quando quiser, e tem 7 dias para desistir com reembolso integral, conforme o Código de Defesa do Consumidor. Ao expirar, seus dados continuam salvos; só os recursos Premium ficam indisponíveis.</p>
+        <p><b>Casas compartilhadas.</b> Quem cria a Casa é o dono: convida pessoas, define o que cada uma vê e edita, e pode remover membros ou excluir a Casa. O que você lança numa Casa fica com ela — se você sair, os lançamentos continuam lá; se o dono excluir a Casa, tudo nela é apagado.</p>
 
-        <p><b>Disponibilidade.</b> Trabalhamos para manter o app no ar, mas não garantimos funcionamento ininterrupto. Recomendamos exportar seus dados periodicamente como backup.</p>
+        <p><b>Planos.</b> O plano gratuito permite uso individual, com limites. O Premium é um pagamento único, por 1 mês ou 12 meses, sem renovação nem cobrança automática, e vale para todas as pessoas da Casa de quem assina. Você tem 7 dias a partir do pagamento para desistir e receber o valor integral de volta, conforme o Código de Defesa do Consumidor. Depois disso, no plano Anual, você pode pedir o reembolso proporcional dos meses ainda não usados. Ao expirar, seus dados continuam salvos.</p>
 
         <h3>Política de Privacidade</h3>
 
         <div class="aceite-destaque">
-          <b>Seus lançamentos são seus.</b> Nem a equipe do Sumly consegue acessá-los — as regras de segurança do banco de dados impedem tecnicamente esse acesso. Não é apenas uma promessa nossa.
+          <b>Seus lançamentos só aparecem para quem você autoriza na sua Casa.</b> A equipe do Sumly tem acesso técnico ao banco de dados para manutenção e segurança, mas não consulta seus lançamentos, exceto quando você pede ajuda ao suporte ou quando a lei exige.
         </div>
 
-        <p><b>O que coletamos.</b> E-mail e senha (para sua conta), nome, telefone, data de nascimento e sexo (opcionais, para personalizar), foto de perfil (opcional) e os lançamentos que você registra.</p>
+        <p><b>O que coletamos.</b> E-mail e senha (sua conta), nome (aparece nas Casas de que você participa), telefone e foto (opcionais), seus lançamentos e os comprovantes que você anexar, o histórico do que cada pessoa fez na Casa, os e-mails de quem você convida e os dados da sua assinatura. Os serviços que usamos também registram dados técnicos de acesso, como endereço IP.</p>
 
-        <p><b>O que NÃO coletamos.</b> Dados bancários, números de cartão, CPF ou senhas de bancos. Os valores no app são apenas os que você digita ou importa por arquivo.</p>
+        <p><b>O que NÃO pedimos.</b> Dados bancários, números de cartão, CPF ou senhas de banco. Mas atenção: comprovantes que você anexar podem conter esses dados, e ficam visíveis para quem pode ver as finanças da Casa.</p>
 
-        <p><b>Como protegemos.</b> Todo tráfego é criptografado. Senhas são gerenciadas pelo Firebase Authentication (Google) — nem nós as vemos. Pagamentos são processados pelo Mercado Pago; não guardamos dados do seu cartão. Após três tentativas de senha incorretas, o acesso é bloqueado temporariamente.</p>
+        <p><b>Com quem compartilhamos.</b> Só com os serviços que fazem o app funcionar: Google Firebase (login e dados), Vercel (confirmação de pagamento), GitHub Pages e jsDelivr (hospedagem), Google reCAPTCHA (segurança) e Mercado Pago (pagamentos). Alguns ficam fora do Brasil. Não vendemos nem cedemos seus dados para publicidade.</p>
 
-        <p><b>Com quem compartilhamos.</b> Apenas com os serviços que fazem o app funcionar: Google Firebase (dados e login), Mercado Pago (pagamentos) e Vercel (confirmação de pagamento). Não vendemos nem cedemos seus dados para publicidade.</p>
+        <p><b>Seus direitos (LGPD).</b> Você pode saber quais dados temos, corrigi-los, pedir uma cópia completa (no Premium, exporta direto no app; em qualquer plano, sem custo, pelo e-mail), excluir sua conta, revogar consentimentos e reclamar à ANPD. Fale com appsumly@gmail.com.</p>
 
-        <p><b>Dentro da sua Casa.</b> Ao convidar alguém, essa pessoa vê os lançamentos daquela Casa conforme as permissões que você definir. Você controla quem entra, o que cada um vê, e pode remover qualquer membro quando quiser.</p>
-
-        <p><b>Seus direitos (LGPD).</b> Você pode a qualquer momento saber quais dados temos, corrigi-los, exportá-los em Excel/CSV, excluir sua conta com todos os dados, e revogar consentimentos. Basta usar o app ou escrever para o e-mail de contato.</p>
-
-        <p><b>Armazenamento local.</b> Guardamos informações no seu navegador apenas para o app funcionar: manter você logado, lembrar o tema e permitir uso offline. Sem cookies de rastreamento ou publicidade.</p>
+        <p><b>Armazenamento local.</b> Guardamos no seu navegador o necessário para o app funcionar, incluindo uma cópia dos lançamentos para uso offline. Ao sair da conta, essa cópia é apagada. Sem cookies de rastreamento ou publicidade.</p>
 
         <p class="aceite-links">Versões completas: <a href="termos.html" target="_blank">Termos de Uso</a> · <a href="privacidade.html" target="_blank">Política de Privacidade</a></p>
 
@@ -1004,12 +1085,13 @@
   <div class="tela" id="tela-app-shell">
 
     <nav class="bottomnav">
-      <button data-tab="inicio" class="active"><span class="emoji" data-icone="casa"></span>Resumo</button>
+      <button data-tab="inicio" class="active"><span class="emoji" data-icone="casa"></span>Início</button>
       <button data-tab="dashboard"><span class="emoji" data-icone="grafico"></span>Dashboard</button>
       <button data-tab="despesa" id="nav-btn-despesa"><span class="emoji" data-icone="mais"></span>Lançar</button>
       <button data-tab="investimento" id="nav-btn-investimento"><span class="emoji" data-icone="tendencia"></span>Investir</button>
       <button data-tab="compras" id="nav-btn-compras"><span class="emoji" data-icone="carrinho"></span>Compras</button>
       <button data-tab="dividas" id="nav-btn-dividas"><span class="emoji" data-icone="queda"></span>Dívidas</button>
+      <button data-tab="mais" id="nav-btn-mais" aria-haspopup="dialog"><span class="emoji" data-icone="menu"></span>Mais</button>
 
       <div class="nav-rodape">
         <button class="tema-toggle" id="tema-toggle" aria-label="Alternar tema claro/escuro">
@@ -1074,7 +1156,7 @@
         <div id="card-premium-resumo"></div>
 
         <div class="dash-cabecalho">
-          <div class="secao-titulo" style="margin:0;"><span data-icone="casa"></span>Resumo</div>
+          <div class="seg-inicio" role="tablist" aria-label="Visão do mês"><button type="button" class="ativo" data-ir-aba="inicio" role="tab" aria-selected="true">Resumo</button><button type="button" data-ir-aba="dashboard" role="tab" aria-selected="false">Análises</button></div>
           <div class="dash-filtros">
             <select id="select-ano-despesa" aria-label="Filtrar por ano"></select>
             <select id="select-mes-despesa" aria-label="Filtrar por mês"></select>
@@ -1088,9 +1170,9 @@
         <div class="card-resumo cor-dourado clicavel" id="card-clicavel-investido"><div class="avatar" data-icone="tendencia" data-tam="20"></div><div class="texto"><div class="titulo">Total Investido no mês</div></div><div class="valor" id="card-investido-total">R$ 0,00</div></div>
         </div>
 
-        <div class="secao-titulo"><span data-icone="alvo"></span>Orçamento por tipo</div>
-        <table class="tabela-app" id="tabela-orcamento" style="display:none;"><thead><tr><th>Categoria</th><th>Gasto</th><th>Orçado</th><th>Status</th></tr></thead><tbody></tbody></table>
-        <div class="vazio" id="orcamento-vazio">Nenhum tipo com gasto este mês.</div>
+        <div class="secao-titulo"><span data-icone="alvo"></span>Orçamento por categoria</div>
+        <div class="lista-orcamento" id="lista-orcamento"></div>
+        <div class="vazio" id="orcamento-vazio">Nenhuma despesa neste mês ainda.</div>
 
         <div class="secao-titulo"><span data-icone="lampada"></span>Dicas de economia</div>
         <div id="lista-dicas"></div>
@@ -1099,7 +1181,7 @@
       <!-- DASHBOARD -->
       <div class="tela" id="tab-dashboard">
         <div class="dash-cabecalho">
-          <div class="secao-titulo" style="margin:0;"><span data-icone="grafico"></span>Dashboard</div>
+          <div class="seg-inicio" role="tablist" aria-label="Visão do mês"><button type="button" data-ir-aba="inicio" role="tab" aria-selected="false">Resumo</button><button type="button" class="ativo" data-ir-aba="dashboard" role="tab" aria-selected="true">Análises</button></div>
           <div class="dash-filtros">
             <select id="select-ano-dashboard" aria-label="Filtrar por ano"></select>
             <select id="select-mes-dashboard" aria-label="Filtrar por mês"></select>
@@ -1182,14 +1264,14 @@
         <div id="form-despesa-wrapper">
           <div class="toggle-duas">
             <div class="active" id="toggle-lancar-despesa"><span data-icone="mais"></span>Despesa</div>
-            <div id="toggle-lancar-salario"><span data-icone="entrada"></span>Salário</div>
+            <div id="toggle-lancar-salario"><span data-icone="entrada"></span>Receita</div>
           </div>
 
           <div id="form-despesa">
             <div class="lancamento-rapido" id="lancamento-rapido">
               <div class="lr-titulo"><span data-icone="raio"></span>Lançamento rápido</div>
               <div class="lr-campos">
-                <input type="text" id="lr-desc" placeholder="Ex: Mercado · ou Geladeira em 10x" autocomplete="off">
+                <input type="text" id="lr-desc" placeholder="Ex: Mercado" title="Dica: escreva &quot;Geladeira 10x&quot; para parcelar" autocomplete="off">
                 <input type="number" id="lr-valor" step="0.01" placeholder="R$ 0,00">
                 <button id="btn-lr-salvar" aria-label="Lançar rapidamente">Lançar</button>
               </div>
@@ -1349,7 +1431,7 @@
           <div class="secao-titulo">Despesas recentes <span class="acao" id="btn-toggle-historico-despesa">mostrar</span></div>
           <div id="lista-historico-despesa" style="display:none;"></div>
 
-          <div class="secao-titulo">Salários recentes <span class="acao" id="btn-toggle-historico-salario">mostrar</span></div>
+          <div class="secao-titulo">Receitas recentes <span class="acao" id="btn-toggle-historico-salario">mostrar</span></div>
           <div id="lista-historico-salario" style="display:none;"></div>
         </div>
       </div>
@@ -1366,20 +1448,20 @@
 
         <div class="cards-row">
           <div class="card-mini"><div class="titulo">Aportes</div><div class="valor" style="color:var(--verde);" id="card-aportes">R$ 0,00</div></div>
-          <div class="card-mini"><div class="titulo">Resgates</div><div class="valor" style="color:var(--vermelho);" id="card-resgates">R$ 0,00</div></div>
+          <div class="card-mini"><div class="titulo">Resgates</div><div class="valor" id="card-resgates">R$ 0,00</div></div>
           <div class="card-mini"><div class="titulo">Meta</div><div class="valor" id="card-meta-invest">R$ 0,00</div></div>
           <div class="card-mini"><div class="titulo">Acumulado</div><div class="valor" style="color:var(--dourado);" id="card-acumulado">R$ 0,00</div></div>
         </div>
 
         <div id="coluna-invest-tipo">
           <div class="secao-titulo">Por tipo</div>
-          <table class="tabela-app" id="tabela-invest-tipo" style="display:none;"><thead><tr><th>Tipo</th><th>Saldo</th><th>No mês</th><th>Meta</th><th>Status</th></tr></thead><tbody></tbody></table>
+          <table class="tabela-app responsiva" id="tabela-invest-tipo" style="display:none;"><thead><tr><th>Tipo</th><th>Saldo</th><th>No mês</th><th>Meta</th><th>Status</th></tr></thead><tbody></tbody></table>
           <div class="vazio" id="invest-tipo-vazio">Nenhum aporte este mês.</div>
         </div>
 
         <div id="coluna-invest-banco">
           <div class="secao-titulo">Por banco</div>
-          <table class="tabela-app" id="tabela-invest-banco" style="display:none;"><thead><tr><th>Banco</th><th>Saldo</th><th>No mês</th><th>Meta</th><th>Status</th></tr></thead><tbody></tbody></table>
+          <table class="tabela-app responsiva" id="tabela-invest-banco" style="display:none;"><thead><tr><th>Banco</th><th>Saldo</th><th>No mês</th><th>Meta</th><th>Status</th></tr></thead><tbody></tbody></table>
           <div class="vazio" id="invest-banco-vazio">Nenhum aporte este mês.</div>
         </div>
 
@@ -1487,7 +1569,8 @@
           <button class="subnav-btn active" data-subtab="perfil"><span data-icone="pessoa"></span>Perfil</button>
           <button class="subnav-btn" data-subtab="casa"><span data-icone="casa"></span>Casa</button>
           <button class="subnav-btn" data-subtab="cadastros"><span data-icone="lista"></span>Cadastros</button>
-          <button class="subnav-btn" data-subtab="importacoes"><span data-icone="upload"></span>Importações</button>
+          <button class="subnav-btn" data-subtab="importacoes"><span data-icone="upload"></span>Dados</button>
+          <button class="subnav-btn" data-subtab="ajuda"><span data-icone="lampada"></span>Ajuda</button>
         </div>
 
         <!-- SUB-ABA: PERFIL -->
@@ -1506,42 +1589,30 @@
           <input type="text" id="perfil-nome">
           <label>Telefone (opcional)</label>
           <input type="tel" id="perfil-telefone" placeholder="(11) 91234-5678">
-          <label>Sexo (opcional)</label>
-          <select id="perfil-sexo">
-            <option value="">Prefiro não informar</option>
-            <option value="feminino">Feminino</option>
-            <option value="masculino">Masculino</option>
-            <option value="outro">Outro</option>
-          </select>
-          <label>Data de nascimento (opcional)</label>
-          <input type="date" id="perfil-nascimento">
           <label>E-mail</label>
           <input type="email" id="perfil-email">
           <div class="hint">Trocar o e-mail pode pedir que você faça login de novo, por segurança.</div>
           <div class="erro-texto" id="perfil-erro"></div>
           <button class="secundario" id="btn-salvar-perfil">Salvar perfil</button>
 
-          <div class="secao-titulo"><span data-icone="lampada"></span>Conhecendo o app</div>
-          <button class="secundario" id="btn-rever-tour">Rever o tour guiado</button>
-          <button class="secundario" id="btn-ver-relatorio">Ver fechamento do mês passado</button>
-
-          <div class="secao-titulo"><span data-icone="lixeira"></span>Lixeira</div>
-          <div class="hint">O que você excluiu nos últimos 30 dias. Depois disso é apagado de vez.</div>
-          <div id="lista-lixeira"></div>
+          <div class="secao-titulo"><span data-icone="lua"></span>Aparência</div>
+          <div class="linha-aparencia">
+            <span>Tema claro ou escuro</span>
+            <button class="tema-toggle compacto" id="btn-tema-ajustes" aria-label="Alternar tema claro/escuro">
+              <span class="tt-opcao" data-tema="light"><span data-icone="sol" data-tam="13"></span></span>
+              <span class="tt-opcao" data-tema="dark"><span data-icone="lua" data-tam="13"></span></span>
+              <span class="tt-bolinha"></span>
+            </button>
+          </div>
 
           <div class="secao-titulo"><span data-icone="sino"></span>Notificações</div>
           <div id="status-notificacoes"></div>
 
-          <div class="secao-titulo">Privacidade e termos</div>
-          <div class="hint">Seus lançamentos são acessíveis apenas por você e por quem você convidar para sua Casa.</div>
-          <a class="secundario" href="privacidade.html" target="_blank" style="display:block; text-align:center; text-decoration:none;">Política de Privacidade</a>
-          <a class="secundario" href="termos.html" target="_blank" style="display:block; text-align:center; text-decoration:none;">Termos de Uso</a>
-          <a class="secundario" href="https://sumly.com.br" style="display:block; text-align:center; text-decoration:none;">Página inicial do Sumly</a>
+          <button class="secundario" id="btn-logout" style="margin-top:18px;">Sair da conta</button>
 
           <div class="secao-titulo">Zona de risco</div>
-          <button class="secundario link-perigo" id="btn-logout">Sair da conta</button>
           <button class="secundario link-perigo" id="btn-excluir-conta">Excluir minha conta e todos os dados</button>
-          <div class="hint">Apaga permanentemente sua conta, suas Casas e tudo que há nelas. Antes de excluir, recomendamos exportar seus dados em Ajustes → Importações.</div>
+          <div class="hint">Apaga permanentemente sua conta, suas Casas e tudo que há nelas. Antes de excluir, guarde uma cópia: no Premium, exporte em Ajustes → Dados; em qualquer plano, peça pelo appsumly@gmail.com.</div>
         </div>
 
         <!-- SUB-ABA: CASA -->
@@ -1681,12 +1752,29 @@
           <div class="hint">Baixe seus lançamentos para uma planilha — útil para backup ou análise fora do app.</div>
           <button class="secundario" id="btn-exportar-xlsx"><span data-icone="download"></span>Exportar tudo (Excel)</button>
           <button class="secundario" id="btn-exportar-csv-despesas">Exportar despesas (CSV)</button>
-          <button class="secundario" id="btn-exportar-csv-salarios">Exportar salários (CSV)</button>
+          <button class="secundario" id="btn-exportar-csv-salarios">Exportar receitas (CSV)</button>
           <button class="secundario" id="btn-exportar-csv-invest">Exportar investimentos (CSV)</button>
 
           <div class="secao-titulo"><span data-icone="relogio"></span>Últimas importações</div>
           <div class="hint">Quem importou o quê, mais recente primeiro.</div>
           <div id="lista-importacoes"></div>
+
+          <div class="secao-titulo"><span data-icone="lixeira"></span>Lixeira</div>
+          <div class="hint">O que você excluiu nos últimos 30 dias. Depois disso é apagado de vez.</div>
+          <div id="lista-lixeira"></div>
+        </div>
+
+        <!-- SUB-ABA: AJUDA -->
+        <div class="subtab-conteudo" id="subtab-ajuda">
+          <div class="secao-titulo"><span data-icone="lampada"></span>Conhecendo o app</div>
+          <button class="secundario" id="btn-rever-tour">Rever o tour guiado</button>
+          <button class="secundario" id="btn-ver-relatorio">Ver fechamento do mês passado</button>
+
+          <div class="secao-titulo">Privacidade e termos</div>
+          <div class="hint">Seus lançamentos são acessíveis apenas por você e por quem você convidar para sua Casa.</div>
+          <a class="secundario" href="privacidade.html" target="_blank" style="display:block; text-align:center; text-decoration:none;">Política de Privacidade</a>
+          <a class="secundario" href="termos.html" target="_blank" style="display:block; text-align:center; text-decoration:none;">Termos de Uso</a>
+          <a class="secundario" href="https://sumly.com.br" style="display:block; text-align:center; text-decoration:none;">Página inicial do Sumly</a>
         </div>
       </div>
     </main>
@@ -1795,7 +1883,7 @@
     </div>
 
     <div class="aceite-alerta">
-      <b>Esta ação é permanente.</b> Não há como desfazer, e não guardamos cópia dos seus dados depois da exclusão.
+      <b>Esta ação é permanente.</b> Não há como desfazer. Guardamos apenas os registros de pagamento exigidos por lei. O que você lançou em Casas de outras pessoas continua com elas.
     </div>
 
     <div class="secao-titulo">O que será apagado</div>
@@ -1808,6 +1896,20 @@
     <div class="erro-texto" id="erro-exclusao"></div>
     <button class="principal" id="btn-confirmar-exclusao" style="background:var(--vermelho);" disabled>Excluir permanentemente</button>
     <button class="secundario" id="btn-cancelar-exclusao">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-mais">
+  <div class="modal-conteudo">
+    <div class="modal-cabecalho">
+      <h3>Mais</h3>
+      <button class="fechar" id="btn-fechar-mais" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="menu-mais">
+      <button type="button" data-ir="dividas"><span data-icone="queda" data-tam="20"></span><span><b>Dívidas</b><small>Cartão, empréstimos e financiamentos</small></span></button>
+      <button type="button" data-ir="ajustes"><span data-icone="engrenagem" data-tam="20"></span><span><b>Ajustes</b><small>Perfil, Casa, categorias e dados</small></span></button>
+      <button type="button" data-ir="ajustes:ajuda"><span data-icone="lampada" data-tam="20"></span><span><b>Ajuda</b><small>Tour, fechamento do mês e termos</small></span></button>
+    </div>
   </div>
 </div>
 
@@ -1829,7 +1931,7 @@
 
     <div class="toggle-duas" id="toggle-plano-paywall">
       <div class="active" id="paywall-toggle-mensal">Mensal</div>
-      <div id="paywall-toggle-anual">Anual</div>
+      <div id="paywall-toggle-anual">Anual · R$ 10/mês</div>
     </div>
 
     <div class="paywall-preco">
@@ -1838,9 +1940,17 @@
       <div class="pp-nota" id="paywall-nota" style="display:none;"></div>
     </div>
 
+    <ul class="hint" id="paywall-resumo" style="margin:12px 0 4px; padding-left:18px; line-height:1.5;">
+      <li>Pagamento único: 1 mês (Mensal) ou 12 meses (Anual)</li>
+      <li>Não renova sozinho, sem cobrança automática</li>
+      <li>Vale para todas as pessoas da sua Casa</li>
+      <li>Desistiu em até 7 dias? Devolvemos tudo. No Anual, depois disso, devolvemos os meses não usados.</li>
+      <li style="list-style:none; margin-left:-18px; margin-top:4px;"><a href="termos.html" target="_blank" rel="noopener">Ler os Termos de Uso</a></li>
+    </ul>
+
     <div id="paywall-automatico" style="display:none;">
       <button class="principal" id="btn-assinar-agora"><span data-icone="cartao"></span>Assinar agora</button>
-      <div class="hint" style="text-align:center; margin-top:10px;">Liberação na hora, automática. Pode cancelar quando quiser.</div>
+      <div class="hint" style="text-align:center; margin-top:10px;">Pagamento pelo Mercado Pago. Liberação na hora, automática.</div>
     </div>
 
     <div class="paywall-pix" id="paywall-manual">
@@ -2133,6 +2243,9 @@ const ICONES = {
   casa: '<path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   grafico: '<path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/>',
   mais: '<path d="M12 5v14M5 12h14"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  chevronEsq: '<path d="m15 18-6-6 6-6"/>',
+  chevronDir: '<path d="m9 18 6-6-6-6"/>',
   tendencia: '<path d="m3 17 6-6 4 4 8-8"/><path d="M17 7h4v4"/>',
   carrinho: '<circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h3l2.4 12.4a1 1 0 0 0 1 .6h8.7a1 1 0 0 0 1-.8L21 7H6"/>',
   queda: '<path d="m3 7 6 6 4-4 8 8"/><path d="M21 17h-4v-4"/>',
@@ -2222,7 +2335,25 @@ let dadosUsuario = null; // { config, orcamento, metasInvestimento, statusPagame
 // UTILITÁRIOS
 // ===================================================
 function formatarMoeda(valor) { return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+// Escapa também aspas: o texto pode parar dentro de atributos (href="...",
+// data-...="..."), e sem isso uma aspa no dado fecha o atributo e injeta código.
+// "1 conta" / "3 contas" — em vez de "3 conta(s)"
+function plural(n, umItem, variosItens) { return n + ' ' + (n === 1 ? umItem : variosItens); }
+
+function escapeHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// Só aceita links http/https. Bloqueia "javascript:" e outros esquemas que
+// rodariam código no app quando alguém tocasse no link.
+function linkSeguro(url) {
+  const texto = String(url == null ? '' : url).trim();
+  if (!texto) return '';
+  try {
+    const u = new URL(texto);
+    return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '';
+  } catch (e) { return ''; }
+}
 function inputMonthParaMesAno(v) { const [ano, mes] = v.split('-'); return MESES[parseInt(mes, 10) - 1] + '/' + ano; }
 function mostrarToast(texto, tipo, textoAcao, aoClicarAcao) {
   const el = document.getElementById('toast');
@@ -2284,7 +2415,7 @@ function aplicarTema(tema) {
 function alternarTema() {
   aplicarTema(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
-['btn-tema', 'btn-tema-desktop', 'tema-toggle'].forEach(id => {
+['btn-tema', 'btn-tema-desktop', 'tema-toggle', 'btn-tema-ajustes'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', alternarTema);
 });
@@ -2369,7 +2500,7 @@ function limparTentativasLogin(email) {
 // fortalece a prova de consentimento exigida pela LGPD: demonstra que houve
 // oportunidade real de leitura, não um "aceito" clicado às cegas.
 const CHAVE_ACEITE = 'sumly_aceite_termos';
-const VERSAO_TERMOS = '2026-09-12';
+const VERSAO_TERMOS = '2026-10-22';
 
 function jaAceitouTermos() {
   try {
@@ -2416,9 +2547,69 @@ function monitorarRolagemAceite() {
   setTimeout(verificar, 120);
 }
 
-function mostrarTelaAceite() {
+// modo: 'cadastro' (antes de criar a conta), 'primeiro' (primeiro acesso por
+// outro caminho, ex: Google) ou 'atualizacao' (a versão aceita ficou antiga).
+function mostrarTelaAceite(modo = 'cadastro') {
+  const textos = {
+    cadastro: ['Antes de criar sua conta', 'Leia nossos termos e nossa política de privacidade. Role até o fim para continuar.', 'Voltar'],
+    primeiro: ['Antes de começar', 'Leia nossos termos e nossa política de privacidade. Role até o fim para continuar.', 'Sair'],
+    atualizacao: ['Atualizamos nossos termos', 'Leia a nova versão dos Termos de Uso e da Política de Privacidade. Role até o fim para continuar.', 'Sair']
+  }[modo] || [];
+  if (textos.length) {
+    document.getElementById('aceite-titulo').textContent = textos[0];
+    document.getElementById('aceite-sub').textContent = textos[1];
+    document.getElementById('btn-recusar-termos').textContent = textos[2];
+  }
+  // Recomeça do topo, com o botão travado até rolar até o fim
+  const area = document.getElementById('aceite-conteudo');
+  if (area) area.scrollTop = 0;
+  document.getElementById('btn-aceitar-termos').disabled = true;
+  const aviso = document.getElementById('aceite-aviso');
+  aviso.textContent = 'Role o texto até o fim para liberar o botão';
+  aviso.classList.remove('pronto');
+  document.getElementById('aceite-fim').classList.remove('visivel');
   mostrarTelaCheia('tela-aceite');
   monitorarRolagemAceite();
+}
+
+// Aceite registrado neste aparelho há pouco (ex: na tela que aparece antes do
+// cadastro por e-mail). Serve só para não pedir duas vezes seguidas.
+function aceiteLocalRecente() {
+  try {
+    const dados = JSON.parse(localStorage.getItem(CHAVE_ACEITE) || 'null');
+    return !!dados && dados.versao === VERSAO_TERMOS && (Date.now() - new Date(dados.em).getTime()) < 30 * 60 * 1000;
+  } catch (e) { return false; }
+}
+
+// Quando o aceite é pedido no meio do login, guarda a resposta aqui.
+let respostaAceiteLogin = null;
+function pedirAceiteNoLogin(modo) {
+  return new Promise((resolver) => { respostaAceiteLogin = resolver; mostrarTelaAceite(modo); });
+}
+
+// Todo login passa por aqui — inclusive pelo Google, que antes criava a conta
+// sem mostrar os termos. Vale a versão gravada na conta (no servidor), não só
+// a deste navegador. Devolve false se a pessoa não aceitar.
+async function garantirAceiteDosTermos(user) {
+  const ref = db.collection('users').doc(user.uid);
+  const snap = await ref.get();
+  const registro = snap.exists ? (snap.data().aceiteTermos || null) : null;
+  if (registro && registro.versao === VERSAO_TERMOS) { registrarAceiteLocal(); return true; }
+
+  if (!aceiteLocalRecente()) {
+    const aceitou = await pedirAceiteNoLogin(registro ? 'atualizacao' : 'primeiro');
+    if (!aceitou) return false;
+    registrarAceiteLocal();
+  }
+  const metodo = (user.providerData && user.providerData[0] && user.providerData[0].providerId) || 'desconhecido';
+  await ref.set({
+    aceiteTermos: { aceito: true, versao: VERSAO_TERMOS, em: new Date().toISOString(), metodo },
+    // Sexo e data de nascimento deixaram de ser coletados (não tinham uso no
+    // app). Os que já existiam são apagados junto com o novo aceite.
+    sexo: firebase.firestore.FieldValue.delete(),
+    dataNascimento: firebase.firestore.FieldValue.delete()
+  }, { merge: true });
+  return true;
 }
 
 // Guarda o cadastro que estava em andamento enquanto a pessoa lê os termos.
@@ -2426,6 +2617,11 @@ let cadastroAguardandoAceite = null;
 
 document.getElementById('btn-aceitar-termos').addEventListener('click', async () => {
   registrarAceiteLocal();
+  if (respostaAceiteLogin) {
+    const resolver = respostaAceiteLogin; respostaAceiteLogin = null;
+    resolver(true);
+    return;
+  }
   mostrarTelaCheia('tela-login');
   // Se a pessoa chegou aqui no meio de um cadastro, continua de onde parou
   if (cadastroAguardandoAceite) {
@@ -2436,6 +2632,11 @@ document.getElementById('btn-aceitar-termos').addEventListener('click', async ()
 });
 
 document.getElementById('btn-recusar-termos').addEventListener('click', () => {
+  if (respostaAceiteLogin) {
+    const resolver = respostaAceiteLogin; respostaAceiteLogin = null;
+    resolver(false);
+    return;
+  }
   cadastroAguardandoAceite = null;
   mostrarTelaCheia('tela-login');
   mostrarToast('Sem aceitar os termos não é possível criar a conta.', 'erro');
@@ -2749,6 +2950,8 @@ function alternarModoLogin(modo) {
   document.getElementById('login-subtitulo').textContent = modo === 'entrar' ? 'Entre com sua conta.' : 'Crie sua conta gratuita.';
   document.getElementById('campos-cadastro').style.display = modo === 'cadastrar' ? 'block' : 'none';
   document.getElementById('requisitos-senha').style.display = modo === 'cadastrar' ? 'flex' : 'none';
+  document.getElementById('login-senha').placeholder = modo === 'cadastrar' ? 'Crie uma senha' : 'Sua senha';
+  document.getElementById('btn-esqueci-login').style.display = modo === 'cadastrar' ? 'none' : '';
   document.getElementById('login-erro').style.display = 'none';
 }
 
@@ -2824,7 +3027,7 @@ async function enviarEmailConfirmacao(usuario) {
 // Cria a conta de fato. Fica separado porque o cadastro pode ser disparado de
 // dois lugares: direto no botão (se os termos já foram aceitos) ou logo depois
 // da tela de termos (quando é a primeira vez).
-async function executarCadastro({ email, senha, nomeCompleto, telefone, sexo, dataNascimento }) {
+async function executarCadastro({ email, senha, nomeCompleto, telefone }) {
   const erroEl = document.getElementById('login-erro');
   const btn = document.getElementById('btn-login-acao');
   btn.disabled = true; btn.textContent = 'Criando conta...';
@@ -2835,8 +3038,8 @@ async function executarCadastro({ email, senha, nomeCompleto, telefone, sexo, da
     // cadastrar com um endereço que não é dele e receber convites alheios.
     try { await enviarEmailConfirmacao(cred.user); } catch (e) {}
     await db.collection('users').doc(cred.user.uid).set({
-      nomeCompleto, telefone, sexo, dataNascimento, email,
-      aceiteTermos: { aceito: true, em: new Date().toISOString(), versao: VERSAO_TERMOS }
+      nomeCompleto, telefone, email,
+      aceiteTermos: { aceito: true, em: new Date().toISOString(), versao: VERSAO_TERMOS, metodo: 'password' }
     }, { merge: true });
   } catch (e) {
     erroEl.textContent = traduzirErroFirebase(e);
@@ -2853,8 +3056,6 @@ document.getElementById('btn-login-acao').addEventListener('click', async () => 
   const senha = document.getElementById('login-senha').value;
   const nomeCompleto = document.getElementById('cadastro-nome').value.trim();
   const telefone = document.getElementById('cadastro-telefone').value.trim();
-  const sexo = document.getElementById('cadastro-sexo').value;
-  const dataNascimento = document.getElementById('cadastro-nascimento').value;
   const erroEl = document.getElementById('login-erro');
   erroEl.style.display = 'none';
   if (!email || !senha) { erroEl.textContent = 'Preencha e-mail e senha.'; erroEl.style.display = 'block'; return; }
@@ -2881,7 +3082,7 @@ document.getElementById('btn-login-acao').addEventListener('click', async () => 
   // No cadastro, os termos são mostrados aqui — quando a pessoa de fato quer
   // criar a conta, não logo que abre o link.
   if (modoLogin === 'cadastrar' && !jaAceitouTermos()) {
-    cadastroAguardandoAceite = { email, senha, nomeCompleto, telefone, sexo, dataNascimento };
+    cadastroAguardandoAceite = { email, senha, nomeCompleto, telefone };
     mostrarTelaAceite();
     return;
   }
@@ -2893,7 +3094,7 @@ document.getElementById('btn-login-acao').addEventListener('click', async () => 
       limparTentativasLogin(email);
       if (auth.currentUser) await processarUsuarioLogado(auth.currentUser);
     } else {
-      await executarCadastro({ email, senha, nomeCompleto, telefone, sexo, dataNascimento });
+      await executarCadastro({ email, senha, nomeCompleto, telefone });
       if (auth.currentUser) await processarUsuarioLogado(auth.currentUser);
     }
   } catch (e) {
@@ -2905,7 +3106,7 @@ document.getElementById('btn-login-acao').addEventListener('click', async () => 
       if (restantes <= 0) {
         erroEl.innerHTML = `Conta bloqueada por 15 minutos após 3 tentativas. Use <b>"Esqueci minha senha"</b> para entrar agora.`;
       } else {
-        erroEl.textContent = `${traduzirErroFirebase(e)} Você tem mais ${restantes} tentativa(s).`;
+        erroEl.textContent = `${traduzirErroFirebase(e)} Você tem mais ${plural(restantes, 'tentativa', 'tentativas')}.`;
       }
     } else {
       erroEl.textContent = traduzirErroFirebase(e);
@@ -2974,6 +3175,11 @@ function mensagemErroAmigavel(e) {
 document.getElementById('btn-logout').addEventListener('click', async () => {
   if (!confirm('Sair da conta?')) return;
   await auth.signOut();
+  // Apaga a cópia offline dos lançamentos guardada neste navegador (importante
+  // em aparelho compartilhado). Se o app estiver aberto em outra aba, o
+  // navegador não deixa apagar agora — a cópia some na próxima saída.
+  try { await db.terminate(); await db.clearPersistence(); } catch (e) {}
+  location.reload();
 });
 
 // ===================================================
@@ -2997,6 +3203,13 @@ function colInvestimentos() { return refHousehold().collection('investimentos');
 function colCompras() { return refHousehold().collection('compras'); }
 function colDividas() { return refHousehold().collection('dividas'); }
 function colLixeira() { return refHousehold().collection('lixeira'); }
+// Investimentos excluídos vão para uma lixeira própria, protegida pela
+// permissão de investimentos (e não pela de finanças).
+function colLixeiraInvestimentos() { return refHousehold().collection('lixeiraInvestimentos'); }
+const ORIGENS_DE_INVESTIMENTO = ['investimentos', 'metasInvestimento'];
+function lixeiraDaOrigem(colecaoOrigem) {
+  return ORIGENS_DE_INVESTIMENTO.includes(colecaoOrigem) ? colLixeiraInvestimentos() : colLixeira();
+}
 
 // ===================================================
 // LIXEIRA (30 dias)
@@ -3008,7 +3221,7 @@ const DIAS_NA_LIXEIRA = 30;
 
 async function moverParaLixeira(colecaoOrigem, docId, dados, descricao) {
   try {
-    await colLixeira().add({
+    await lixeiraDaOrigem(colecaoOrigem).add({
       colecaoOrigem,
       docIdOriginal: docId,
       dados,
@@ -3035,24 +3248,34 @@ async function excluirComLixeira(colecaoNome, colecaoRef, docId, descricao) {
 }
 
 async function listarLixeira() {
-  const snap = await colLixeira().get();
   const limite = Date.now() - DIAS_NA_LIXEIRA * 24 * 60 * 60 * 1000;
   const itens = [];
-  const expirados = [];
 
-  snap.docs.forEach(d => {
-    const item = { id: d.id, ...d.data() };
-    const quando = new Date(item.excluidoEm).getTime();
-    if (quando < limite) expirados.push(d.id);
-    else itens.push(item);
-  });
+  // Lê as duas lixeiras. Cada pessoa só enxerga a que a permissão dela deixa:
+  // quem não pode ver investimentos recebe "sem permissão" naquela, e segue.
+  const lixeiras = [colLixeira(), colLixeiraInvestimentos()];
+  let algumaLeu = false, ultimoErro = null;
+  for (const col of lixeiras) {
+    let snap;
+    try { snap = await col.get(); algumaLeu = true; }
+    catch (e) { ultimoErro = e; continue; }
 
-  // Limpeza automática do que passou de 30 dias
-  if (expirados.length > 0) {
-    const lote = db.batch();
-    expirados.forEach(id => lote.delete(colLixeira().doc(id)));
-    try { await lote.commit(); } catch (e) {}
+    const expirados = [];
+    snap.docs.forEach(d => {
+      const item = { id: d.id, ...d.data(), _lixeira: col };
+      const quando = new Date(item.excluidoEm).getTime();
+      if (quando < limite) expirados.push(d.id);
+      else itens.push(item);
+    });
+
+    // Limpeza automática do que passou de 30 dias
+    if (expirados.length > 0) {
+      const lote = db.batch();
+      expirados.forEach(id => lote.delete(col.doc(id)));
+      try { await lote.commit(); } catch (e) {}
+    }
   }
+  if (!algumaLeu && ultimoErro) throw ultimoErro;
 
   return itens.sort((a, b) => (b.excluidoEm || '').localeCompare(a.excluidoEm || ''));
 }
@@ -3067,15 +3290,21 @@ async function restaurarDaLixeira(item) {
 
   // Usa o ID original quando possível, pra não duplicar se já tiver voltado
   await obterColecao().doc(item.docIdOriginal).set(item.dados);
-  await colLixeira().doc(item.id).delete();
+  await (item._lixeira || lixeiraDaOrigem(item.colecaoOrigem)).doc(item.id).delete();
 }
 
 // ===================================================
 // ATIVIDADE RECENTE (quem fez o quê na Casa)
 // ===================================================
-async function registrarAtividade(acao) {
+// categoria: 'financas' (padrão) ou 'investimentos'. Cada uma vai para uma
+// coleção protegida pela permissão correspondente — assim quem não pode ver
+// investimentos não descobre aportes e resgates pelo histórico.
+function colAtividades(categoria) {
+  return refHousehold().collection(categoria === 'investimentos' ? 'atividadesInvestimentos' : 'atividades');
+}
+async function registrarAtividade(acao, categoria) {
   try {
-    await refHousehold().collection('atividades').add({
+    await colAtividades(categoria).add({
       acao,
       email: auth.currentUser.email,
       nome: document.getElementById('nome-usuario-topo').textContent || auth.currentUser.email,
@@ -3088,10 +3317,23 @@ async function carregarAtividades() {
   const container = document.getElementById('lista-atividades');
   container.innerHTML = '<div class="vazio">Carregando...</div>';
   try {
-    const snap = await refHousehold().collection('atividades').orderBy('quando', 'desc').limit(30).get();
+    // Junta o histórico de finanças e o de investimentos — cada um só se a
+    // pessoa tiver permissão de ver aquela categoria.
+    const docs = [];
+    let algumaLeu = false, ultimoErro = null;
+    for (const categoria of ['financas', 'investimentos']) {
+      try {
+        const s = await colAtividades(categoria).orderBy('quando', 'desc').limit(30).get();
+        docs.push(...s.docs); algumaLeu = true;
+      } catch (e) { ultimoErro = e; }
+    }
+    if (!algumaLeu && ultimoErro) throw ultimoErro;
+    const tempo = d => { const q = d.data().quando; return q ? q.toMillis() : 0; };
+    docs.sort((a, b) => tempo(b) - tempo(a));
+    docs.splice(30);
     container.innerHTML = '';
-    if (snap.empty) { container.innerHTML = '<div class="vazio">Nenhuma atividade ainda.</div>'; return; }
-    snap.docs.forEach(doc => {
+    if (docs.length === 0) { container.innerHTML = '<div class="vazio">Nenhuma atividade ainda.</div>'; return; }
+    docs.forEach(doc => {
       const a = doc.data();
       const quando = a.quando ? a.quando.toDate() : null;
       const dataTexto = quando ? quando.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
@@ -3274,10 +3516,17 @@ async function aceitarConvitePendente(convite, emailConvite) {
   // 1) Vira membro da Casa. Esta é a etapa que dá acesso de verdade — se ela
   // falhar, nada mais deve acontecer, senão a Casa aparece na lista da pessoa
   // sem que ela consiga entrar (foi exatamente o que acontecia antes).
-  await db.collection('households').doc(idAceito).collection('membros').doc(meuUid).set({
+  //    As regras exigem que o convite seja apagado NESTA MESMA gravação: assim
+  //    ele não fica valendo depois, e quem for removido da Casa não consegue
+  //    entrar de novo sozinho usando o convite antigo.
+  const loteEntrada = db.batch();
+  loteEntrada.set(db.collection('households').doc(idAceito).collection('membros').doc(meuUid), {
     email: emailConvite, papel: 'membro', permissoes,
     entrouEm: firebase.firestore.FieldValue.serverTimestamp()
   });
+  loteEntrada.delete(db.collection('convites').doc(emailConvite));
+  loteEntrada.delete(db.collection('households').doc(idAceito).collection('convitesPendentes').doc(emailConvite));
+  await loteEntrada.commit();
 
   // 2) Confirma no servidor que o registro existe mesmo antes de seguir
   const confirmacao = await db.collection('households').doc(idAceito)
@@ -3387,7 +3636,8 @@ async function excluirColecaoInteira(colRef) {
 }
 
 const SUBCOLECOES_DA_CASA = ['despesas', 'salarios', 'investimentos', 'compras', 'dividas', 'lixeira',
-  'config', 'orcamento', 'metasInvestimento', 'statusPagamento', 'convitesPendentes', 'atividades'];
+  'lixeiraInvestimentos', 'config', 'orcamento', 'metasInvestimento', 'statusPagamento', 'convitesPendentes',
+  'atividades', 'atividadesInvestimentos'];
 
 // Apaga TUDO de uma Casa. A ordem importa: as regras só deixam apagar quem é
 // dono — e quem prova isso é o registro da pessoa em 'membros'. Por isso
@@ -3556,14 +3806,10 @@ async function buscarEmailDoDonoDaCasa() {
     }
   } catch (e) {}
 
-  // Se não deu, tenta pela lista de membros
-  try {
-    const snap = await colMembros().get();
-    const dono = snap.docs.map(d => d.data()).find(m => m.papel === 'dono');
-    return dono && dono.email ? dono.email.toLowerCase() : null;
-  } catch (e) {
-    return null;
-  }
+  // Não procura "algum membro com papel dono" na lista: o único dono que vale
+  // é o donoUid gravado na Casa. Procurar pela lista deixava qualquer registro
+  // marcado como dono (com qualquer e-mail) liberar o Premium.
+  return null;
 }
 
 function definirPlanoVigente(dados) {
@@ -3704,7 +3950,14 @@ async function convidarParaCasa(email, papel) {
 
   // O convite global é o que a pessoa convidada realmente lê — se este falhar,
   // o convite não existe pra ela, então o erro precisa aparecer.
-  await db.collection('convites').doc(emailId).set(dadosConvite);
+  try {
+    await db.collection('convites').doc(emailId).set(dadosConvite);
+  } catch (e) {
+    if (e.code === 'permission-denied') {
+      throw new Error('Não foi possível convidar este e-mail agora. A pessoa pode já ter um convite pendente de outra Casa — peça para ela aceitar ou recusar esse convite primeiro.');
+    }
+    throw e;
+  }
 
   // Confirma lendo DO SERVIDOR. Com a persistência offline ativa, um .get()
   // comum leria do cache local e confirmaria uma gravação que talvez nunca
@@ -3738,7 +3991,24 @@ async function salvarPermissoesMembro(uidMembro, permissoes) {
 }
 
 async function removerMembroCasa(uidMembro) {
+  // Pega o e-mail antes de apagar, pra limpar qualquer convite antigo dessa
+  // pessoa para esta Casa (de antes da revisão de segurança, o convite podia
+  // ficar valendo e servir para a pessoa entrar de novo).
+  let emailMembro = '';
+  try {
+    const snap = await colMembros().doc(uidMembro).get();
+    emailMembro = ((snap.exists && snap.data().email) || '').toLowerCase();
+  } catch (e) {}
+
   await colMembros().doc(uidMembro).delete();
+
+  if (emailMembro) {
+    try {
+      const convite = await db.collection('convites').doc(emailMembro).get({ source: 'server' });
+      if (convite.exists && convite.data().householdId === householdId) await convite.ref.delete();
+    } catch (e) { /* convite de outra Casa ou inexistente: nada a fazer */ }
+    try { await refHousehold().collection('convitesPendentes').doc(emailMembro).delete(); } catch (e) {}
+  }
 }
 
 // ===================================================
@@ -4013,7 +4283,7 @@ function gerarDicasEconomia(statusOrcamento, linhasTipo, linhasTipoAnterior, tot
     linhasTipo.forEach(([tipo, total]) => {
       if (dicas.length >= 5) return;
       const pctTotal = total / totalDespesaMes;
-      if (pctTotal >= 0.4) dicas.push(`"${tipo}" concentra ${Math.round(pctTotal * 100)}% de todas as suas despesas este mês.`);
+      if (pctTotal >= 0.4) dicas.push(`${tipo} concentra ${Math.round(pctTotal * 100)}% de todas as suas despesas este mês.`);
     });
   }
   const mapaAnterior = {}; linhasTipoAnterior.forEach(([t, v]) => { mapaAnterior[t] = v; });
@@ -4039,20 +4309,51 @@ function mostrarTelaCheia(id) {
   document.querySelectorAll('#app > .tela').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
+// No celular, Dívidas e Ajustes ficam no menu "Mais"; Análises fica dentro de Início.
+const ABA_DO_BOTAO = { dashboard: 'inicio', dividas: 'mais', ajustes: 'mais' };
 function mostrarTab(nome) {
+  if (nome === 'mais') { abrirMenuMais(); return; }
   document.querySelectorAll('#tela-app-shell main > .tela').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + nome).classList.add('active');
-  document.querySelectorAll('nav.bottomnav button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === nome));
+  const noCelular = !window.matchMedia('(min-width: 900px)').matches;
+  document.querySelectorAll('nav.bottomnav button[data-tab]').forEach(b => {
+    const alvo = b.dataset.tab === nome
+      || (nome === 'dashboard' && b.dataset.tab === 'inicio')
+      || (noCelular && ABA_DO_BOTAO[nome] === 'mais' && b.dataset.tab === 'mais');
+    b.classList.toggle('active', alvo);
+  });
+  document.querySelectorAll('.seg-inicio button').forEach(b => {
+    const ativo = b.dataset.irAba === nome;
+    b.classList.toggle('ativo', ativo); b.setAttribute('aria-selected', ativo ? 'true' : 'false');
+  });
   if (nome === 'inicio') carregarInicio();
   if (nome === 'dashboard') carregarDashboard();
   if (nome === 'despesa') carregarFormularios();
-  if (nome === 'investimento') carregarInvestimentos();
+  if (nome === 'investimento') {
+    const campoMes = document.getElementById('i-mesAno');
+    if (campoMes && !campoMes.value) campoMes.value = mesAtualParaInput();
+    carregarInvestimentos();
+  }
   if (nome === 'compras') carregarCompras();
   if (nome === 'dividas') carregarDividas();
   if (nome === 'ajustes') carregarAjustes();
   renderizarIcones();
 }
 document.querySelectorAll('nav.bottomnav button[data-tab]').forEach(btn => btn.addEventListener('click', () => mostrarTab(btn.dataset.tab)));
+
+function abrirMenuMais() { document.getElementById('modal-mais').classList.add('active'); }
+function fecharMenuMais() { document.getElementById('modal-mais').classList.remove('active'); }
+document.getElementById('btn-fechar-mais').addEventListener('click', fecharMenuMais);
+document.getElementById('modal-mais').addEventListener('click', (ev) => { if (ev.target.id === 'modal-mais') fecharMenuMais(); });
+document.querySelectorAll('#modal-mais [data-ir]').forEach(btn => btn.addEventListener('click', () => {
+  const [aba, subaba] = btn.dataset.ir.split(':');
+  fecharMenuMais();
+  mostrarTab(aba);
+  if (subaba) { const b = document.querySelector(`.subnav-btn[data-subtab="${subaba}"]`); if (b) b.click(); }
+}));
+
+// Início: alterna entre Resumo e Análises
+document.querySelectorAll('.seg-inicio button').forEach(b => b.addEventListener('click', () => mostrarTab(b.dataset.irAba)));
 document.getElementById('btn-ajustes').addEventListener('click', () => mostrarTab('ajustes'));
 
 document.getElementById('toggle-lancar-despesa').addEventListener('click', () => alternarFormLancamento('despesa'));
@@ -4091,6 +4392,12 @@ async function processarUsuarioLogado(user, tentativa = 0) {
   uidProcessandoLogin = user.uid;
   try {
     meuUid = user.uid;
+    if (!(await garantirAceiteDosTermos(user))) {
+      await auth.signOut();
+      mostrarTelaCheia('tela-login');
+      mostrarToast('Para usar o Sumly é preciso aceitar os Termos de Uso e a Política de Privacidade.', 'erro');
+      return;
+    }
     const emailId = (user.email || '').toLowerCase();
     const conviteSnap = await db.collection('convites').doc(emailId).get();
 
@@ -4144,8 +4451,8 @@ function observarLogin() {
       meuUid = null; householdId = null; dadosUsuario = null;
       if (pararDeEscutarConvites) { pararDeEscutarConvites(); pararDeEscutarConvites = null; }
       notificacoesAtuais = [];
-      // Vai direto pro login. Os termos aparecem só na hora de criar a conta —
-      // exigir aceite de quem só quer entrar na própria conta é fricção à toa.
+      // Vai direto pro login. Os termos aparecem antes de criar a conta por
+      // e-mail e, depois do login, só se a conta ainda não aceitou a versão atual.
       mostrarTelaCheia('tela-login');
     }
   });
@@ -4157,7 +4464,7 @@ async function finalizarLogin(user) {
   const nomeExibicao = user.displayName || (user.email ? user.email.split('@')[0] : 'Usuário');
   document.getElementById('nome-usuario-topo').textContent = nomeExibicao;
   document.getElementById('avatar-iniciais').textContent = nomeExibicao.substring(0, 2).toUpperCase();
-  document.getElementById('saudacao-desktop').textContent = saudacaoPorHorario() + ', ' + nomeExibicao + '!';
+  document.getElementById('saudacao-desktop').textContent = saudacaoPorHorario() + ', ' + nomeExibicao.split(' ')[0] + '!';
 
   try {
     const userSnap = await db.collection('users').doc(user.uid).get();
@@ -4268,6 +4575,56 @@ function invalidarCache() { momentoUltimaBusca = 0; }
 
 // Monta o par de filtros ano + mês (mesmo modelo usado em todas as abas).
 // Devolve o mês escolhido e cuida sozinho de repopular os meses ao trocar de ano.
+// Mês escolhido pela pessoa: vale para Resumo, Análises e Investir, para não
+// precisar escolher de novo a cada aba.
+let mesEscolhidoGlobal = null;
+const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+function nomeMesCompleto(mesAno) { const [m, a] = String(mesAno).split('/'); return (NOMES_MESES[MESES.indexOf(m)] || m) + ' ' + a; }
+
+// Troca os dois menus (ano + mês) por um controle só: ‹ Outubro 2026 ›.
+// Os menus originais continuam existindo (escondidos) e seguem sendo a fonte
+// da verdade — o controle novo só mexe neles.
+function montarSeletorMes(selectAno, selectMes, mesesDisponiveis, irPara) {
+  const container = selectMes.parentElement;
+  let w = container.querySelector('.seletor-mes');
+  if (!w) {
+    w = document.createElement('div');
+    w.className = 'seletor-mes';
+    w.innerHTML = `<button type="button" class="sm-seta" data-dir="-1" aria-label="Mês anterior">${icone('chevronEsq', 18)}</button>`
+      + `<select class="sm-lista" aria-label="Escolher mês"></select>`
+      + `<button type="button" class="sm-seta" data-dir="1" aria-label="Próximo mês">${icone('chevronDir', 18)}</button>`;
+    container.insertBefore(w, selectAno);
+    selectAno.classList.add('oculto-por-seletor');
+    selectMes.classList.add('oculto-por-seletor');
+  }
+  const ordenados = mesesDisponiveis.slice().sort((a, b) => ordemDoMes(a) - ordemDoMes(b));
+  w.style.display = ordenados.length ? '' : 'none';
+  const hoje = new Date();
+  const ordemHoje = ordemDoMes(MESES[hoje.getMonth()] + '/' + hoje.getFullYear());
+  const lista = w.querySelector('.sm-lista');
+  lista.innerHTML = '';
+  ordenados.slice().reverse().forEach(m => {
+    const o = document.createElement('option');
+    o.value = m;
+    o.textContent = nomeMesCompleto(m) + (ordemDoMes(m) > ordemHoje ? ' · previsão' : '');
+    lista.appendChild(o);
+  });
+  const atualizar = () => {
+    lista.value = selectMes.value;
+    const i = ordenados.indexOf(selectMes.value);
+    w.querySelector('[data-dir="-1"]').disabled = i <= 0;
+    w.querySelector('[data-dir="1"]').disabled = i < 0 || i >= ordenados.length - 1;
+  };
+  lista.onchange = () => { irPara(lista.value); atualizar(); };
+  w.querySelectorAll('.sm-seta').forEach(b => {
+    b.onclick = () => {
+      const alvo = ordenados[ordenados.indexOf(selectMes.value) + Number(b.dataset.dir)];
+      if (alvo) { irPara(alvo); atualizar(); }
+    };
+  });
+  atualizar();
+}
+
 function configurarFiltroAnoMes(idSelectAno, idSelectMes, mesesDisponiveis, aoMudar) {
   const selectAno = document.getElementById(idSelectAno);
   const selectMes = document.getElementById(idSelectMes);
@@ -4277,7 +4634,21 @@ function configurarFiltroAnoMes(idSelectAno, idSelectMes, mesesDisponiveis, aoMu
   const anoAnterior = selectAno.value;
   selectAno.innerHTML = '';
   anos.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; selectAno.appendChild(o); });
-  const anoSelecionado = anos.includes(anoAnterior) ? anoAnterior : anos[0];
+
+  // Mês que abre por padrão: o mês de hoje. Se ele ainda não tem nada, o mais
+  // recente até hoje. Meses futuros (ex: fatura do cartão que fecha no mês que
+  // vem) continuam na lista, mas não abrem sozinhos — antes o app abria neles
+  // e mostrava um saldo negativo sem nenhuma receita.
+  const hoje = new Date();
+  const mesHoje = MESES[hoje.getMonth()] + '/' + hoje.getFullYear();
+  const porOrdem = (a, b) => ordemDoMes(a) - ordemDoMes(b);
+  const ateHoje = mesesDisponiveis.filter(m => ordemDoMes(m) <= ordemDoMes(mesHoje)).sort(porOrdem);
+  const mesPadrao = mesesDisponiveis.includes(mesHoje) ? mesHoje
+    : (ateHoje.length ? ateHoje[ateHoje.length - 1] : mesesDisponiveis.slice().sort(porOrdem).pop());
+  const anoPadrao = mesPadrao ? mesPadrao.split('/')[1] : anos[0];
+  const mesGlobal = mesEscolhidoGlobal && mesesDisponiveis.includes(mesEscolhidoGlobal) ? mesEscolhidoGlobal : null;
+  const anoSelecionado = mesGlobal ? mesGlobal.split('/')[1]
+    : (anos.includes(anoAnterior) ? anoAnterior : (anos.includes(anoPadrao) ? anoPadrao : anos[0]));
   if (anoSelecionado) selectAno.value = anoSelecionado;
 
   const preencherMeses = (ano, manterMes) => {
@@ -4286,14 +4657,24 @@ function configurarFiltroAnoMes(idSelectAno, idSelectMes, mesesDisponiveis, aoMu
     mesesDoAno.slice().reverse().forEach(m => {
       const o = document.createElement('option'); o.value = m; o.textContent = m.split('/')[0]; selectMes.appendChild(o);
     });
-    const escolhido = (manterMes && mesesDoAno.includes(manterMes)) ? manterMes : mesesDoAno[mesesDoAno.length - 1];
+    const escolhido = (manterMes && mesesDoAno.includes(manterMes)) ? manterMes
+      : (mesesDoAno.includes(mesPadrao) ? mesPadrao : mesesDoAno[mesesDoAno.length - 1]);
     if (escolhido) selectMes.value = escolhido;
     return escolhido;
   };
 
-  const mesInicial = preencherMeses(anoSelecionado, selectMes.value);
-  selectAno.onchange = () => aoMudar(preencherMeses(selectAno.value, null), selectAno.value);
-  selectMes.onchange = () => aoMudar(selectMes.value, selectAno.value);
+  if (anoSelecionado) selectAno.value = anoSelecionado;
+  const mesInicial = preencherMeses(anoSelecionado, mesGlobal || selectMes.value);
+  const irPara = (mes) => {
+    const ano = mes.split('/')[1];
+    selectAno.value = ano;
+    preencherMeses(ano, mes);
+    mesEscolhidoGlobal = mes;
+    aoMudar(mes, ano);
+  };
+  selectAno.onchange = () => { const m = preencherMeses(selectAno.value, null); mesEscolhidoGlobal = m; aoMudar(m, selectAno.value); };
+  selectMes.onchange = () => { mesEscolhidoGlobal = selectMes.value; aoMudar(selectMes.value, selectAno.value); };
+  montarSeletorMes(selectAno, selectMes, mesesDisponiveis, irPara);
   return { mes: mesInicial, ano: anoSelecionado };
 }
 
@@ -4340,11 +4721,11 @@ function calcularAvisos(despesasPorMes) {
 
   if (vencidas.length > 0) {
     const nomes = vencidas.slice(0, 3).map(d => d.desc).join(', ');
-    avisos.push({ tipo: 'erro', texto: `${vencidas.length} conta(s) vencida(s): ${nomes}${vencidas.length > 3 ? '...' : ''}` });
+    avisos.push({ tipo: 'erro', texto: `${plural(vencidas.length, 'conta vencida', 'contas vencidas')}: ${nomes}${vencidas.length > 3 ? '...' : ''}` });
   }
   if (vencendoEmBreve.length > 0) {
     const nomes = vencendoEmBreve.slice(0, 3).map(d => d.desc).join(', ');
-    avisos.push({ tipo: 'atencao', texto: `${vencendoEmBreve.length} conta(s) vencendo nos próximos 5 dias: ${nomes}${vencendoEmBreve.length > 3 ? '...' : ''}` });
+    avisos.push({ tipo: 'atencao', texto: `${plural(vencendoEmBreve.length, 'conta vence', 'contas vencem')} nos próximos 5 dias: ${nomes}${vencendoEmBreve.length > 3 ? '...' : ''}` });
   }
 
   const { linhasCategoria } = agruparPorTipoEBanco(despesasMesAtual);
@@ -4436,6 +4817,7 @@ function renderizarResumo(mesSelecionado, despesasPorMes, salariosPorMes, invest
     document.getElementById('card-receitas').textContent = formatarMoeda(0);
     document.getElementById('card-despesas').textContent = formatarMoeda(0);
     document.getElementById('card-saldo').textContent = formatarMoeda(0);
+    document.getElementById('card-saldo').closest('.card-resumo').classList.remove('saldo-negativo');
     document.getElementById('card-investido-total').textContent = formatarMoeda(0);
     return;
   }
@@ -4449,6 +4831,7 @@ function renderizarResumo(mesSelecionado, despesasPorMes, salariosPorMes, invest
   document.getElementById('card-receitas').textContent = formatarMoeda(receitaAtual);
   document.getElementById('card-despesas').textContent = formatarMoeda(despesaAtual);
   document.getElementById('card-saldo').textContent = formatarMoeda(receitaAtual - despesaAtual);
+  document.getElementById('card-saldo').closest('.card-resumo').classList.toggle('saldo-negativo', receitaAtual - despesaAtual < 0);
   document.getElementById('card-investido-total').textContent = formatarMoeda(investidoAtual);
 
   const { linhasCategoria } = agruparPorTipoEBanco(despesasDoMes);
@@ -4456,15 +4839,23 @@ function renderizarResumo(mesSelecionado, despesasPorMes, salariosPorMes, invest
   const categoriasMesAnterior = agruparPorTipoEBanco(despesasMesAnterior).linhasCategoria;
   const dicas = gerarDicasEconomia(statusOrcamento, linhasCategoria, categoriasMesAnterior, despesaAtual);
 
-  const tabela = document.getElementById('tabela-orcamento'), tbody = tabela.querySelector('tbody'), vazio = document.getElementById('orcamento-vazio');
-  tbody.innerHTML = '';
-  if (statusOrcamento.length === 0) { tabela.style.display = 'none'; vazio.style.display = 'block'; }
+  const listaOrc = document.getElementById('lista-orcamento'), vazio = document.getElementById('orcamento-vazio');
+  listaOrc.innerHTML = '';
+  if (statusOrcamento.length === 0) { listaOrc.style.display = 'none'; vazio.style.display = 'block'; }
   else {
-    tabela.style.display = 'table'; vazio.style.display = 'none';
+    listaOrc.style.display = ''; vazio.style.display = 'none';
     statusOrcamento.forEach(l => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHtml(l.tipo)}</td><td>${formatarMoeda(l.gasto)}</td><td>${l.orcado > 0 ? formatarMoeda(l.orcado) : '-'}</td><td><span class="badge ${classeBadge(l.status)}">${escapeHtml(l.status)}</span></td>`;
-      tbody.appendChild(tr);
+      const item = document.createElement('div');
+      item.className = 'orc-item';
+      const temOrcamento = l.orcado > 0;
+      const pct = temOrcamento ? Math.min(100, Math.round((l.gasto / l.orcado) * 100)) : 0;
+      const resto = temOrcamento ? l.orcado - l.gasto : 0;
+      const textoResto = !temOrcamento ? '' : (resto >= 0 ? 'sobram ' + formatarMoeda(resto) : 'passou ' + formatarMoeda(-resto));
+      item.innerHTML = `<div class="orc-topo"><span class="orc-nome">${escapeHtml(l.tipo)}</span>`
+        + `<span class="orc-valores"><b>${formatarMoeda(l.gasto)}</b>${temOrcamento ? ' de ' + formatarMoeda(l.orcado) : ''}</span></div>`
+        + (temOrcamento ? `<div class="orc-barra"><div class="${classeBadge(l.status)}" style="width:${pct}%"></div></div>` : '')
+        + `<div class="orc-rodape">${l.status === 'Dentro do orçamento' ? '<span></span>' : `<span class="badge ${classeBadge(l.status)}">${escapeHtml(l.status)}</span>`}<span>${textoResto}</span></div>`;
+      listaOrc.appendChild(item);
     });
   }
   const listaDicas = document.getElementById('lista-dicas');
@@ -4483,10 +4874,10 @@ function classeBadge(status) {
 function abrirModalDetalhe(titulo, itens, camposDescricao, comStatus) {
   document.getElementById('modal-titulo').textContent = titulo;
   const total = itens.reduce((s, i) => s + i.valor, 0);
-  let textoTotal = itens.length + ' lançamento(s) — total ' + formatarMoeda(total);
+  let textoTotal = plural(itens.length, 'lançamento', 'lançamentos') + ' — total ' + formatarMoeda(total);
   if (comStatus) {
     const pagas = itens.filter(i => i.status === 'Pago').length;
-    textoTotal += ` — ${pagas} paga(s), ${itens.length - pagas} em aberto`;
+    textoTotal += ` — ${plural(pagas, 'paga', 'pagas')}, ${itens.length - pagas} em aberto`;
   }
   document.getElementById('modal-total').textContent = textoTotal;
   const lista = document.getElementById('modal-lista');
@@ -4499,7 +4890,7 @@ function abrirModalDetalhe(titulo, itens, camposDescricao, comStatus) {
       const secundario = camposDescricao.secundario(item);
       const pago = item.status === 'Pago';
       const botaoStatus = comStatus
-        ? `<button class="btn-status-toggle ${pago ? 'pago' : 'aberto'}" data-chave="${item.chave}">${pago ? 'Pago' : 'Em aberto'}</button>`
+        ? `<button class="btn-status-toggle ${pago ? 'pago' : 'aberto'}" data-chave="${escapeHtml(item.chave)}">${pago ? 'Pago' : 'Em aberto'}</button>`
         : '';
       li.innerHTML = `<div class="info"><div class="principal">${escapeHtml(principal)}</div><div class="secundario">${escapeHtml(secundario)}</div></div><div class="direita"><span class="valor">${formatarMoeda(item.valor)}</span>${botaoStatus}</div>`;
       lista.appendChild(li);
@@ -4531,7 +4922,7 @@ document.getElementById('modal-detalhe').addEventListener('click', (ev) => { if 
 
 document.getElementById('card-clicavel-receitas').addEventListener('click', () => {
   abrirModalDetalhe('Recebido em ' + (estadoResumoAtual.mes || '--'), estadoResumoAtual.salariosDoMes,
-    { principal: (i) => i.nome, secundario: () => 'Salário/receita' });
+    { principal: (i) => i.nome, secundario: () => 'Receita' });
 });
 document.getElementById('card-clicavel-despesas').addEventListener('click', () => {
   abrirModalDetalhe('Gastos em ' + (estadoResumoAtual.mes || '--'), estadoResumoAtual.despesasDoMes,
@@ -4644,14 +5035,18 @@ function renderizarDashboard(mesSelecionado, despesasPorMes, mesesDisponiveis, s
   const saldo = totalEntradas - totalDespesas;
 
   document.getElementById('dash-saldo').textContent = formatarMoeda(saldo);
+  // Saldo negativo troca o cartão azul pelo vermelho
+  const cartaoSaldo = document.getElementById('dash-saldo').closest('.dash-destaque');
+  cartaoSaldo.classList.toggle('grad-saldo', saldo >= 0);
+  cartaoSaldo.classList.toggle('grad-despesa', saldo < 0);
   document.getElementById('dash-entradas').textContent = formatarMoeda(totalEntradas);
   document.getElementById('dash-despesas').textContent = formatarMoeda(totalDespesas);
   document.getElementById('dash-investido').textContent = formatarMoeda(totalInvestido);
 
   document.getElementById('dash-saldo-sub').textContent = mesSelecionado || '—';
-  document.getElementById('dash-entradas-sub').textContent = salariosDoMes.length + ' lançamento(s)';
-  document.getElementById('dash-despesas-sub').textContent = totalEntradas > 0 ? Math.round((totalDespesas / totalEntradas) * 100) + '% das entradas' : despesasDoMes.length + ' lançamento(s)';
-  document.getElementById('dash-investido-sub').textContent = investDoMes.length + ' aporte(s)';
+  document.getElementById('dash-entradas-sub').textContent = plural(salariosDoMes.length, 'lançamento', 'lançamentos');
+  document.getElementById('dash-despesas-sub').textContent = totalEntradas > 0 ? Math.round((totalDespesas / totalEntradas) * 100) + '% das entradas' : plural(despesasDoMes.length, 'lançamento', 'lançamentos');
+  document.getElementById('dash-investido-sub').textContent = plural(investDoMes.length, 'aporte', 'aportes');
   document.getElementById('dash-ano-titulo').textContent = anoSelecionado || '—';
 
   // Gráfico 1: gastos por categoria (doughnut)
@@ -4836,7 +5231,7 @@ function renderizarFaturasDoMes(mesSelecionado, despesasPorMes) {
         <span class="valores"><b style="color:var(--texto);">${formatarMoeda(total)}</b></span>
       </div>
       ${c.limite > 0 ? `<div class="barra-progresso"><div class="barra-progresso-fill" style="width:${pctLimite}%; background:${corBarra};"></div></div>` : ''}
-      <div class="sub-status">${itens.length} compra(s) · vence dia ${Number(c.diaVencimento) || '-'}${c.limite > 0 ? ' · ' + Math.round(pctLimite) + '% do limite' : ''}</div>`;
+      <div class="sub-status">${plural(itens.length, 'compra', 'compras')} · vence dia ${Number(c.diaVencimento) || '-'}${c.limite > 0 ? ' · ' + Math.round(pctLimite) + '% do limite' : ''}</div>`;
     container.appendChild(div);
   });
 
@@ -5330,13 +5725,13 @@ document.getElementById('btn-excluir-conta').addEventListener('click', async () 
     const totalLancamentos = cacheDespesasRaw.length + cacheSalariosRaw.length + cacheInvestRaw.length;
     resumo.innerHTML = `
       <div class="lista-item"><div class="info"><div class="principal">Sua conta e seu perfil</div><div class="secundario">${escapeHtml(auth.currentUser.email)}</div></div></div>
-      <div class="lista-item"><div class="info"><div class="principal">${minhas.length} Casa(s) que você criou</div><div class="secundario">${minhas.map(c => escapeHtml(c.nome)).join(', ') || '—'}</div></div></div>
+      <div class="lista-item"><div class="info"><div class="principal">${minhas.length === 1 ? '1 Casa que você criou' : minhas.length + ' Casas que você criou'}</div><div class="secundario">${minhas.map(c => escapeHtml(c.nome)).join(', ') || '—'}</div></div></div>
       <div class="lista-item"><div class="info"><div class="principal">Todos os lançamentos dessas Casas</div><div class="secundario">Despesas, receitas, investimentos, compras e dívidas</div></div></div>`;
 
     if (participo.length > 0) {
       avisoCompartilhadas.style.display = 'block';
       avisoCompartilhadas.className = 'hint';
-      avisoCompartilhadas.innerHTML = `Você também participa de ${participo.length} Casa(s) de outras pessoas (${participo.map(c => escapeHtml(c.nome)).join(', ')}). Você sairá delas, mas os dados dessas Casas <b>não</b> serão apagados.`;
+      avisoCompartilhadas.innerHTML = `Você também participa de ${plural(participo.length, 'Casa', 'Casas')} de outras pessoas (${participo.map(c => escapeHtml(c.nome)).join(', ')}). Você sairá delas, mas os dados dessas Casas <b>não</b> serão apagados.`;
     }
   } catch (e) {
     resumo.innerHTML = '<div class="vazio">Não consegui listar seus dados, mas a exclusão apagará tudo que é seu.</div>';
@@ -5769,7 +6164,7 @@ function exibirRelatorio(r) {
 
   const positivo = r.saldo >= 0;
   let html = `
-    <div class="rel-destaque" style="${positivo ? '' : 'background: linear-gradient(135deg, #D6452C, #FF7A5C);'}">
+    <div class="rel-destaque" style="${positivo ? '' : 'background: linear-gradient(135deg, #B93A22, #D0432A); color: #fff;'}">
       <div class="rd-rotulo">${positivo ? 'Você economizou' : 'Fechou no negativo'}</div>
       <div class="rd-valor">${formatarMoeda(Math.abs(r.saldo))}</div>
       <div class="rd-sub">${formatarMoeda(r.totalRecebido)} entraram · ${formatarMoeda(r.totalGasto)} saíram</div>
@@ -5805,6 +6200,8 @@ async function verificarRelatorioMensal() {
   const mesPassado = mesAnteriorDe(new Date());
   try {
     if (localStorage.getItem(CHAVE_RELATORIO_VISTO) === mesPassado) return;
+    // No primeiro acesso o tour vem antes; o fechamento do mês fica para a próxima vez
+    if (tourAtivo || !localStorage.getItem(CHAVE_TOUR_VISTO)) return;
   } catch (e) { return; }
 
   try {
@@ -6246,7 +6643,7 @@ async function renderizarHistoricoSalario() {
     btnExcluir.addEventListener('click', () => {
       li.remove();
       excluirComDesfazer(
-        'Salário excluído.',
+        'Receita excluída.',
         async () => { await excluirComLixeira('salarios', colSalarios(), s.id, s.nome); invalidarCache(); registrarAtividade(`excluiu um salário: ${s.nome}`); },
         renderizarHistoricoSalario
       );
@@ -6296,7 +6693,7 @@ document.getElementById('btn-salvar-edicao-salario').addEventListener('click', a
       recebedor: document.getElementById('es-recebedor').value.trim(),
       recorrente: document.getElementById('es-recorrente').checked
     }); invalidarCache();
-    mostrarToast('Salário atualizado!', 'ok');
+    mostrarToast('Receita atualizada!', 'ok');
     registrarAtividade(`editou um salário: ${nome}`);
     document.getElementById('modal-editar-salario').classList.remove('active');
     salarioEditandoId = null;
@@ -6820,6 +7217,7 @@ function renderizarInvestimentos(mesSelecionado, investimentosPorMes, mesesDispo
 
   document.getElementById('card-aportes').textContent = formatarMoeda(aporteMes);
   document.getElementById('card-resgates').textContent = formatarMoeda(resgateMes);
+  document.getElementById('card-resgates').style.color = resgateMes ? 'var(--vermelho)' : '';
   document.getElementById('card-meta-invest').textContent = formatarMoeda(metaMesTotal);
   document.getElementById('card-acumulado').textContent = formatarMoeda(acumuladoGeral);
 
@@ -6849,7 +7247,7 @@ function preencherTabelaInvest(idTabela, idVazio, linhas) {
     const corMov = mov > 0 ? 'var(--verde)' : (mov < 0 ? 'var(--vermelho)' : 'var(--texto-suave)');
     const textoMov = mov === 0 ? '—' : (mov > 0 ? '+' : '−') + ' ' + formatarMoeda(Math.abs(mov));
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(l.nome)}</td><td><b>${formatarMoeda(l.aportado)}</b></td><td style="color:${corMov};">${textoMov}</td><td>${l.meta > 0 ? formatarMoeda(l.meta) : '-'}</td><td><span class="badge ${classeBadge(l.status)}">${escapeHtml(l.status)}</span></td>`;
+    tr.innerHTML = `<td>${escapeHtml(l.nome)}</td><td data-rotulo="Saldo"><b>${formatarMoeda(l.aportado)}</b></td><td data-rotulo="No mês" style="color:${corMov};">${textoMov}</td><td data-rotulo="Meta">${l.meta > 0 ? formatarMoeda(l.meta) : '—'}</td><td><span class="badge ${classeBadge(l.status)}">${escapeHtml(l.status)}</span></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -6918,7 +7316,7 @@ document.getElementById('btn-salvar-edicao-invest').addEventListener('click', as
       tipo, banco, valor
     }); invalidarCache();
     mostrarToast(ehResgate ? 'Resgate atualizado!' : 'Aporte atualizado!', 'ok');
-    registrarAtividade(`editou um ${ehResgate ? 'resgate' : 'aporte'}: ${tipo}`);
+    registrarAtividade(`editou um ${ehResgate ? 'resgate' : 'aporte'}: ${tipo}`, 'investimentos');
     document.getElementById('modal-editar-invest').classList.remove('active');
     investEditandoId = null;
     renderizarHistoricoInvest();
@@ -7001,7 +7399,7 @@ document.getElementById('btn-salvar-invest').addEventListener('click', async (ev
   try {
     await colInvestimentos().add({ mesAno: inputMonthParaMesAno(mesAnoInput), desc, tipo, banco, valor, criadoEm: firebase.firestore.FieldValue.serverTimestamp() }); invalidarCache();
     mostrarToast(ehResgate ? 'Resgate lançado!' : 'Aporte lançado!', 'ok');
-    registrarAtividade(`lançou um ${ehResgate ? 'resgate' : 'aporte'}: ${tipo} (${formatarMoeda(Math.abs(valor))})`);
+    registrarAtividade(`lançou um ${ehResgate ? 'resgate' : 'aporte'}: ${tipo} (${formatarMoeda(Math.abs(valor))})`, 'investimentos');
     ['i-desc', 'i-tipo', 'i-banco', 'i-valor'].forEach(id => document.getElementById(id).value = '');
     carregarInvestimentos();
   } catch (e) { mostrarToast('Erro: ' + mensagemErroAmigavel(e), 'erro'); }
@@ -7089,7 +7487,7 @@ async function carregarDividas() {
     const totalOriginal = dividas.reduce((s, d) => s + d.valorTotal, 0);
 
     document.getElementById('dividas-total').textContent = formatarMoeda(totalDevido);
-    document.getElementById('dividas-qtd').textContent = abertas.length + ' dívida(s) em aberto';
+    document.getElementById('dividas-qtd').textContent = plural(abertas.length, 'dívida em aberto', 'dívidas em aberto');
     document.getElementById('dividas-pago').textContent = formatarMoeda(totalPago);
     document.getElementById('dividas-progresso').textContent = totalOriginal > 0
       ? Math.round((totalPago / totalOriginal) * 100) + '% do total quitado'
@@ -7459,18 +7857,19 @@ function criarCardCompraPendente(item) {
   div.className = 'lista-item';
   div.style.flexDirection = 'column'; div.style.alignItems = 'stretch'; div.style.gap = '8px';
 
-  const linkHtml = item.link ? ` · <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener" style="color:var(--azul);">ver link</a>` : '';
+  const linkValido = linkSeguro(item.link);
+  const linkHtml = linkValido ? ` · <a href="${escapeHtml(linkValido)}" target="_blank" rel="noopener noreferrer" style="color:var(--azul);">ver link</a>` : '';
   const categoriaHtml = item.categoria ? `<span class="badge sem" style="margin-right:6px;">${escapeHtml(item.categoria)}</span>` : '';
   const linhaTopo = document.createElement('div');
   linhaTopo.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:8px;';
-  linhaTopo.innerHTML = `<div class="info"><div class="principal">${escapeHtml(item.nome)}</div><div class="secundario">${categoriaHtml}${item.observacao ? escapeHtml(item.observacao) : 'Item desejado'}${linkHtml}</div></div><span class="valor">${formatarMoeda(item.valorEstimado)}</span>`;
+  linhaTopo.innerHTML = `<div class="info"><div class="principal">${escapeHtml(item.nome)}</div><div class="secundario">${categoriaHtml}${item.observacao ? escapeHtml(item.observacao) : ''}${linkHtml}</div></div><span class="valor">${formatarMoeda(item.valorEstimado)}</span>`;
   div.appendChild(linhaTopo);
 
   if (podeEditarComprasAgora) {
     const linhaAcoes = document.createElement('div');
     linhaAcoes.style.cssText = 'display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;';
     const btnComprar = document.createElement('button');
-    btnComprar.className = 'btn-status-toggle aberto'; btnComprar.innerHTML = icone('check',14) + ' Marcar como comprado';
+    btnComprar.className = 'btn-status-toggle pago'; btnComprar.innerHTML = icone('check',14) + ' Marcar como comprado';
     btnComprar.addEventListener('click', () => abrirModalMarcarComprado(item));
     const btnEditar = document.createElement('button');
     btnEditar.className = 'btn-status-toggle sem'; btnEditar.innerHTML = icone('lapis',14) + ' Editar';
@@ -7562,6 +7961,7 @@ document.getElementById('btn-salvar-edicao-compra').addEventListener('click', as
     link: document.getElementById('ec-link').value.trim(),
     observacao: document.getElementById('ec-obs').value.trim()
   };
+  if (dados.link && !linkSeguro(dados.link)) { mostrarToast('Link inválido. Use um endereço que comece com https://', 'erro'); return; }
   if (itemEdicaoAtual.comprado) {
     dados.dataCompra = document.getElementById('ec-data').value;
     dados.valorPago = Number(document.getElementById('ec-valor-pago').value) || 0;
@@ -7591,6 +7991,7 @@ document.getElementById('btn-salvar-compra').addEventListener('click', async (ev
   const link = document.getElementById('c-link').value.trim();
   const observacao = document.getElementById('c-obs').value.trim();
   if (!nome) { mostrarToast('Digite o nome do item.', 'erro'); return; }
+  if (link && !linkSeguro(link)) { mostrarToast('Link inválido. Use um endereço que comece com https://', 'erro'); return; }
 
   const btn = ev.target; btn.disabled = true; btn.textContent = 'Salvando...';
   try {
@@ -7830,15 +8231,25 @@ function prepararPaywall() {
 }
 
 document.getElementById('btn-assinar-agora').addEventListener('click', async (ev) => {
-  const email = auth.currentUser ? auth.currentUser.email : '';
-  if (!email) { mostrarToast('Você precisa estar logado para assinar.', 'erro'); return; }
+  const usuario = auth.currentUser;
+  if (!usuario || !usuario.email) { mostrarToast('Você precisa estar logado para assinar.', 'erro'); return; }
 
   const btn = ev.target; btn.disabled = true; btn.textContent = 'Preparando pagamento...';
   try {
+    // O Premium fica preso ao e-mail da conta — por isso ele precisa estar
+    // confirmado antes do pagamento (é o servidor que confere isso de verdade).
+    try { await usuario.reload(); } catch (e) {}
+    if (!usuario.emailVerified) {
+      try { await enviarEmailConfirmacao(usuario); } catch (e) {}
+      throw new Error(`Antes de assinar, confirme seu e-mail: enviamos um link para ${usuario.email}. Depois de clicar nele, toque em Assinar de novo.`);
+    }
+    // O servidor descobre quem está assinando pelo login (token), não por um
+    // e-mail mandado pelo navegador.
+    const token = await usuario.getIdToken(true);
     const resposta = await fetch(CONFIG_ASSINATURA.urlBackend + '/api/criar-checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, plano: planoSelecionadoPaywall })
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ plano: planoSelecionadoPaywall })
     });
     const dados = await resposta.json();
     if (!dados.ok || !dados.linkPagamento) throw new Error(dados.erro || 'Não consegui gerar o pagamento.');
@@ -7908,7 +8319,7 @@ function renderizarStatusPlano() {
   let validade;
   if (origem === 'admin') validade = 'Acesso de administrador — sem prazo';
   else if (origem === 'cortesia') validade = 'Acesso de cortesia — sem prazo';
-  else if (origem === 'casa') validade = 'Premium pela Casa "' + nomeCasaAtual + '" — você não precisa assinar';
+  else if (origem === 'casa') validade = 'Premium pela Casa "' + escapeHtml(nomeCasaAtual) + '" — você não precisa assinar';
   else if (premium && planoAtual.validoAte) validade = 'Ativo até ' + planoAtual.validoAte.toLocaleDateString('pt-BR');
   else validade = 'Grátis — 1 pessoa, 1 dívida e 1 cartão';
   div.innerHTML = `<div class="info"><div class="principal">${premium ? icone('estrela',15) + ' Premium' : 'Plano Grátis'}</div><div class="secundario">${validade}</div></div>`;
@@ -8015,7 +8426,7 @@ async function carregarListaLixeira() {
 
       const div = document.createElement('div');
       div.className = 'lista-item';
-      div.innerHTML = `<div class="info"><div class="principal">${escapeHtml(item.descricao || tipo)}</div><div class="secundario">${tipo} · excluído em ${quando.toLocaleDateString('pt-BR')} · some em ${diasRestantes} dia(s)</div></div>`;
+      div.innerHTML = `<div class="info"><div class="principal">${escapeHtml(item.descricao || tipo)}</div><div class="secundario">${tipo} · excluído em ${quando.toLocaleDateString('pt-BR')} · some em ${plural(diasRestantes, 'dia', 'dias')}</div></div>`;
 
       const btnRestaurar = document.createElement('button');
       btnRestaurar.className = 'btn-status-toggle pago'; btnRestaurar.textContent = 'Restaurar';
@@ -8024,7 +8435,7 @@ async function carregarListaLixeira() {
         try {
           await restaurarDaLixeira(item);
           mostrarToast('Item restaurado!', 'ok');
-          registrarAtividade(`restaurou da lixeira: ${item.descricao || tipo}`);
+          registrarAtividade(`restaurou da lixeira: ${item.descricao || tipo}`, ORIGENS_DE_INVESTIMENTO.includes(item.colecaoOrigem) ? 'investimentos' : 'financas');
           carregarListaLixeira();
         } catch (e) {
           mostrarToast('Erro: ' + mensagemErroAmigavel(e), 'erro');
@@ -8067,7 +8478,7 @@ function carregarAjustes() {
 }
 
 // ===================================================
-// MEU PERFIL: editar nome, telefone, sexo, nascimento e e-mail
+// MEU PERFIL: editar nome, telefone e e-mail
 // ===================================================
 async function carregarPerfil() {
   const user = auth.currentUser;
@@ -8076,8 +8487,6 @@ async function carregarPerfil() {
   const dados = snap.exists ? snap.data() : {};
   document.getElementById('perfil-nome').value = dados.nomeCompleto || user.displayName || '';
   document.getElementById('perfil-telefone').value = dados.telefone || '';
-  document.getElementById('perfil-sexo').value = dados.sexo || '';
-  document.getElementById('perfil-nascimento').value = dados.dataNascimento || '';
   document.getElementById('perfil-email').value = user.email || '';
   aplicarAvatar(dados.fotoBase64 || null);
 }
@@ -8086,7 +8495,10 @@ async function carregarPerfil() {
 // avatar aparece: o menu do topo e a prévia na tela de Perfil.
 function aplicarAvatar(dataUrlOuNull) {
   const nomeExibicao = document.getElementById('nome-usuario-topo').textContent || '?';
-  const iniciais = nomeExibicao.trim().substring(0, 2).toUpperCase() || '?';
+  const partesNome = nomeExibicao.trim().split(/\s+/).filter(Boolean);
+  const iniciais = (partesNome.length > 1 ? partesNome[0][0] + partesNome[partesNome.length - 1][0] : (partesNome[0] || '?').substring(0, 2)).toUpperCase();
+  const btnRemover = document.getElementById('btn-remover-foto');
+  if (btnRemover) btnRemover.style.display = dataUrlOuNull ? '' : 'none';
   ['avatar-iniciais', 'avatar-perfil-preview'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -8150,8 +8562,6 @@ document.getElementById('btn-salvar-perfil').addEventListener('click', async (ev
 
   const nomeCompleto = document.getElementById('perfil-nome').value.trim();
   const telefone = document.getElementById('perfil-telefone').value.trim();
-  const sexo = document.getElementById('perfil-sexo').value;
-  const dataNascimento = document.getElementById('perfil-nascimento').value;
   const novoEmail = document.getElementById('perfil-email').value.trim();
 
   if (!nomeCompleto) { erroEl.textContent = 'O nome não pode ficar em branco.'; erroEl.style.display = 'block'; return; }
@@ -8162,11 +8572,14 @@ document.getElementById('btn-salvar-perfil').addEventListener('click', async (ev
     if (user.displayName !== nomeCompleto) await user.updateProfile({ displayName: nomeCompleto });
     if (novoEmail && novoEmail !== user.email) await user.updateEmail(novoEmail);
 
-    await db.collection('users').doc(user.uid).set({ nomeCompleto, telefone, sexo, dataNascimento, email: novoEmail || user.email }, { merge: true });
+    await db.collection('users').doc(user.uid).set({
+      nomeCompleto, telefone, email: novoEmail || user.email,
+      sexo: firebase.firestore.FieldValue.delete(), dataNascimento: firebase.firestore.FieldValue.delete()
+    }, { merge: true });
 
     document.getElementById('nome-usuario-topo').textContent = nomeCompleto;
     document.getElementById('avatar-iniciais').textContent = nomeCompleto.substring(0, 2).toUpperCase();
-    document.getElementById('saudacao-desktop').textContent = saudacaoPorHorario() + ', ' + nomeCompleto + '!';
+    document.getElementById('saudacao-desktop').textContent = saudacaoPorHorario() + ', ' + nomeCompleto.split(' ')[0] + '!';
 
     mostrarToast('Perfil atualizado!', 'ok');
   } catch (e) {
@@ -8477,6 +8890,12 @@ document.getElementById('btn-salvar-metas').addEventListener('click', async () =
 // navegador (html2pdf, carregado só na hora de exportar).
 const URL_GERADOR_PDF = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.14.0/dist/html2pdf.bundle.min.js';
 const URL_GERADOR_EXCEL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+// Impressão digital (SRI) de cada arquivo externo: se a CDN entregar um arquivo
+// diferente do publicado nessa versão, o navegador se recusa a rodar.
+const INTEGRIDADE_SCRIPTS = {
+  [URL_GERADOR_PDF]: 'sha384-EaWTV/aVUkLz3tfwg3+5ycX7Q/d9ET9ruOKUgUuFIRUCfzHO1eo2J62a844iWPmY',
+  [URL_GERADOR_EXCEL]: 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz'
+};
 const ROTULOS_FORMA = { credito: 'Crédito', pix: 'Pix', debito: 'Débito', boleto: 'Boleto', outros: 'Outros' };
 const CORES_FORMA = { credito: '#394155', pix: '#00A36C', debito: '#E0A12A', boleto: '#9AA3B2', outros: '#C7CDD6' };
 
@@ -8825,6 +9244,10 @@ function carregarScriptExterno(url, mensagemErro) {
     const existente = document.querySelector(`script[src="${url}"]`);
     if (existente && existente.dataset.carregado) return ok();
     const s = existente || document.createElement('script');
+    if (!existente && INTEGRIDADE_SCRIPTS[url]) {
+      s.integrity = INTEGRIDADE_SCRIPTS[url];
+      s.crossOrigin = 'anonymous';
+    }
     s.src = url;
     s.onload = () => { s.dataset.carregado = '1'; ok(); };
     s.onerror = () => falha(new Error(mensagemErro || 'Não consegui carregar um componente. Confira a internet e tente de novo.'));
@@ -9377,8 +9800,8 @@ document.getElementById('btn-confirmar-import-ofx').addEventListener('click', as
       if (contador === 400) { await batch.commit(); batch = db.batch(); contador = 0; }
     }
     await batch.commit();
-    await registrarAtividade(`importou ${marcados.length} despesa(s) de um extrato bancário`);
-    mostrarToast(marcados.length + ' despesa(s) importada(s)!', 'ok');
+    await registrarAtividade(`importou ${plural(marcados.length, 'despesa', 'despesas')} de um extrato bancário`);
+    mostrarToast(plural(marcados.length, 'despesa importada', 'despesas importadas') + '!', 'ok');
     document.getElementById('preview-ofx').style.display = 'none';
     document.getElementById('import-ofx-arquivo').value = '';
     transacoesOfxAtual = [];
@@ -9485,64 +9908,28 @@ const CHAVE_TOUR_VISTO = 'sumly_tour_visto_v2';
 const PASSOS_TOUR = [
   {
     titulo: 'Bem-vindo ao Sumly!',
-    texto: 'Vou te mostrar o app em menos de um minuto, passando por cada parte. Pode acompanhar — a tela vai junto com a explicação.',
+    texto: 'Em 5 passos rápidos você conhece o essencial. Dá para pular agora e rever depois em Mais → Ajuda.',
     aba: 'inicio'
   },
   {
-    titulo: 'Seu mês em quatro números',
-    texto: 'Quanto entrou, quanto saiu, quanto sobrou e quanto você investiu. Toque em qualquer um desses cards para ver os lançamentos por trás do número.',
+    titulo: 'Seu mês num relance',
+    texto: 'Quanto entrou, saiu, sobrou e foi investido. Use as setas ‹ › para trocar de mês e toque num número para ver os lançamentos.',
     aba: 'inicio', alvo: '.cards-resumo-grid'
   },
   {
-    titulo: 'Escolha o período',
-    texto: 'Todo o app responde a esse filtro. Escolha o ano e o mês que quiser analisar.',
-    aba: 'inicio', alvo: '#tab-inicio .dash-filtros'
-  },
-  {
     titulo: 'Lançar é rápido',
-    texto: 'Digite o que foi e o valor — só isso. O Sumly aprende com seu histórico e preenche categoria, banco e forma de pagamento sozinho.',
+    texto: 'Digite o que foi e o valor — o Sumly aprende com seu histórico e preenche o resto. Para dinheiro que entra, toque em Receita.',
     aba: 'despesa', alvo: '#lancamento-rapido'
   },
   {
-    titulo: 'Essencial ou supérfluo?',
-    texto: 'Marcar isso alimenta a análise 50/30/20 no Dashboard, que mostra se sua renda está bem distribuída.',
-    aba: 'despesa', alvo: '#lr-essenc'
-  },
-  {
-    titulo: 'Precisa de mais detalhes?',
-    texto: 'Aqui você lança parcelado, recorrente todo mês, com data de vencimento ou vinculado a um cartão de crédito.',
-    aba: 'despesa', alvo: '#btn-abrir-form-completo'
-  },
-  {
-    titulo: 'E o dinheiro que entra',
-    texto: 'Salário, freela, aluguel recebido, venda — cada receita com sua origem e quem recebeu. Salário fixo você lança uma vez e repete sozinho todo mês.',
-    aba: 'despesa', alvo: '#toggle-lancar-salario',
-    antes: () => { const t = document.getElementById('toggle-lancar-salario'); if (t) t.click(); }
-  },
-  {
     titulo: 'Entenda para onde vai',
-    texto: 'Gráficos por categoria, comparação entre os meses, faturas dos cartões e a regra 50/30/20.',
-    aba: 'dashboard', alvo: '#tab-dashboard .dash-destaques'
-  },
-  {
-    titulo: 'Investimentos',
-    texto: 'Registre aportes e resgates. O saldo acumulado por tipo e por corretora é calculado sozinho, com metas para acompanhar.',
-    aba: 'investimento', alvo: '#tab-investimento .cards-row'
-  },
-  {
-    titulo: 'Dívidas e financiamentos',
-    texto: 'Veja quanto falta, quanto sairia para quitar hoje e quanto você economizaria antecipando. Funciona para cartão, empréstimo e financiamento de carro ou imóvel.',
-    aba: 'dividas', alvo: '#tab-dividas .dash-destaques'
-  },
-  {
-    titulo: 'Lista de compras',
-    texto: 'Planeje o que quer comprar e marque quando comprou, com valor e forma de pagamento.',
-    aba: 'compras', alvo: '#compras-acoes-wrapper'
+    texto: 'Em Início → Análises ficam os gráficos por categoria, as faturas dos cartões e a regra 50/30/20.',
+    aba: 'dashboard', alvo: '#tab-dashboard .seg-inicio'
   },
   {
     titulo: 'Use junto com sua família',
-    texto: 'Em Ajustes você convida quem mora com você, define o que cada um pode ver ou editar, e configura categorias, cartões e orçamento.',
-    aba: 'inicio', alvo: '#btn-user-menu, #btn-ajustes'
+    texto: 'Em Mais → Ajustes → Casa você convida quem mora com você e escolhe o que cada um vê ou edita. Dívidas também ficam em Mais.',
+    aba: 'inicio', alvo: '#nav-btn-mais, #btn-user-menu'
   }
 ];
 
