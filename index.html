@@ -765,8 +765,21 @@
   .grafico-card .grafico-sub { font-size: 12px; color: var(--texto-suave); margin: -4px 0 10px; font-variant-numeric: tabular-nums; }
   .grafico-card .grafico-sub:empty { display: none; }
   .grafico-card .grafico-dica { font-size: 11.5px; color: var(--texto-suave); margin-top: 8px; }
-  .filtro-ativo { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: linear-gradient(var(--azul-glow), var(--azul-glow)), var(--bg-card); box-shadow: 0 6px 16px rgba(0,0,0,0.18); border: 1px solid var(--azul); color: var(--texto); border-radius: 12px; padding: 8px 8px 8px 14px; margin-bottom: 14px; font-size: 13px; position: sticky; top: 64px; z-index: 5; }
-  .filtro-ativo button { background: var(--bg-card); color: var(--texto); border: 1px solid var(--borda); border-radius: 9px; padding: 0 12px; min-height: 36px; font-weight: 700; font-size: 12.5px; cursor: pointer; margin: 0; width: auto; }
+  .filtro-ativo { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: linear-gradient(var(--azul-glow), var(--azul-glow)), var(--bg-card); box-shadow: 0 6px 16px rgba(0,0,0,0.18); border: 1px solid var(--azul); color: var(--texto); border-radius: 12px; padding: 8px 8px 8px 14px; margin-bottom: 14px; font-size: 13px; position: sticky; top: 64px; z-index: 5; }
+  .filtro-ativo > button { background: var(--bg-card); color: var(--texto); border: 1px solid var(--borda); border-radius: 9px; padding: 0 12px; min-height: 36px; font-weight: 700; font-size: 12.5px; cursor: pointer; margin: 0; width: auto; }
+  .filtro-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+  .filtro-chips .filtro-rotulo { font-weight: 700; font-size: 12.5px; }
+  #filtro-chips-dash { display: contents; }
+  .filtro-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); color: var(--texto); border: 1px solid var(--borda); border-radius: 999px; padding: 0 10px; min-height: 32px; font-size: 12.5px; font-weight: 700; cursor: pointer; margin: 0; width: auto; font-family: inherit; }
+  .filtro-chip i, #detalhe-categoria-dash .det-cor { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  #detalhe-categoria-dash .det-cor { margin-right: 7px; vertical-align: 1px; }
+  .evo-rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .evo-trilho { position: relative; height: 230px; min-width: 100%; }
+  @media (max-width: 640px) {
+    .filtro-ativo .filtro-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .filtro-ativo .filtro-chips::-webkit-scrollbar { display: none; }
+    .filtro-chip { flex: none; }
+  }
   #detalhe-categoria-dash .det-titulo { font-size: 12.5px; font-weight: 700; margin: 14px 0 6px; }
   #detalhe-categoria-dash .det-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--borda); font-size: 13px; font-variant-numeric: tabular-nums; }
   #detalhe-categoria-dash .det-desc { display: flex; flex-direction: column; min-width: 0; }
@@ -1203,8 +1216,11 @@
         <div class="dash-cabecalho">
           <div class="seg-inicio" role="tablist" aria-label="Visão do mês"><button type="button" data-ir-aba="inicio" role="tab" aria-selected="false">Resumo</button><button type="button" class="ativo" data-ir-aba="dashboard" role="tab" aria-selected="true">Análises</button></div>
           <div class="dash-filtros">
-            <select id="select-ano-dashboard" aria-label="Filtrar por ano"></select>
-            <select id="select-mes-dashboard" aria-label="Filtrar por mês"></select>
+            <div class="seletor-mes" id="seletor-ano-dash">
+              <button type="button" class="sm-seta" data-dir="-1" aria-label="Ano anterior"><span data-icone="chevronEsq"></span></button>
+              <select class="sm-lista" id="lista-ano-dash" aria-label="Escolher ano"></select>
+              <button type="button" class="sm-seta" data-dir="1" aria-label="Próximo ano"><span data-icone="chevronDir"></span></button>
+            </div>
             <button type="button" class="dash-exportar" id="btn-abrir-exportar"><span data-icone="download"></span>Exportar</button>
           </div>
         </div>
@@ -1233,22 +1249,22 @@
         </div>
 
         <div class="filtro-ativo" id="filtro-ativo-dash" style="display:none;">
-          <span>Filtrando por <b id="filtro-ativo-nome"></b></span>
-          <button type="button" id="btn-limpar-filtro-dash" aria-label="Limpar filtro">Limpar ✕</button>
+          <div class="filtro-chips"><span class="filtro-rotulo">Filtros:</span><span id="filtro-chips-dash"></span></div>
+          <button type="button" id="btn-limpar-filtro-dash" aria-label="Limpar todos os filtros">Limpar</button>
         </div>
 
         <div class="grafico-card destaque-ano">
           <div class="grafico-titulo"><span data-icone="grafico"></span><span id="evolucao-titulo">Receitas x Despesas em <span id="dash-ano-titulo">—</span></span></div>
           <div class="grafico-sub" id="evolucao-sub"></div>
-          <canvas id="grafico-evolucao" role="img"></canvas>
-          <div class="grafico-dica">Toque num mês para ver aquele mês na tela toda.</div>
+          <div class="evo-rolagem" id="evo-rolagem"><div class="evo-trilho"><canvas id="grafico-evolucao" role="img"></canvas></div></div>
+          <div class="grafico-dica">Toque em um ou mais meses para filtrar a tela. Toque de novo para tirar.</div>
         </div>
 
         <div class="grafico-card">
           <div class="grafico-titulo"><span data-icone="pizza"></span>Gastos por categoria</div>
           <div class="grafico-sub" id="gastos-tipo-sub"></div>
           <div class="grafico-area" id="area-gastos-tipo"><canvas id="grafico-gastos-tipo"></canvas></div>
-          <div class="grafico-dica" id="dica-gastos-tipo">Toque numa categoria para ver os lançamentos e a evolução no ano.</div>
+          <div class="grafico-dica" id="dica-gastos-tipo">Toque em uma ou mais categorias para ver os lançamentos e a evolução no ano.</div>
           <div id="detalhe-categoria-dash"></div>
           <div class="vazio" id="grafico-gastos-tipo-vazio" style="display:none;">Nenhum gasto este mês.</div>
         </div>
@@ -1261,7 +1277,8 @@
         </div>
 
         <div class="grafico-card">
-          <div class="grafico-titulo"><span data-icone="alvo"></span>Metas de investimento do mês</div>
+          <div class="grafico-titulo"><span data-icone="alvo"></span><span id="metas-titulo">Metas de investimento do mês</span></div>
+          <div class="grafico-sub" id="metas-sub"></div>
           <div id="barras-metas-dashboard"></div>
         </div>
 
@@ -1273,7 +1290,7 @@
         </div>
 
         <div class="grafico-card">
-          <div class="grafico-titulo"><span data-icone="cartao"></span>Faturas do mês</div>
+          <div class="grafico-titulo"><span data-icone="cartao"></span><span id="faturas-titulo">Faturas do mês</span></div>
           <div id="lista-faturas-dashboard"></div>
         </div>
 
@@ -4390,7 +4407,7 @@ document.querySelectorAll('#modal-mais [data-ir]').forEach(btn => btn.addEventLi
   if (subaba) { const b = document.querySelector(`.subnav-btn[data-subtab="${subaba}"]`); if (b) b.click(); }
 }));
 
-document.getElementById('btn-limpar-filtro-dash').addEventListener('click', () => definirFiltroCategoriaDash(null));
+document.getElementById('btn-limpar-filtro-dash').addEventListener('click', () => limparFiltrosDash());
 
 // Início: alterna entre Resumo e Análises
 document.querySelectorAll('.seg-inicio button').forEach(b => b.addEventListener('click', () => mostrarTab(b.dataset.irAba)));
@@ -5103,8 +5120,9 @@ function criarGraficoBarrasHorizontais(canvas, area, entradas, opcoes = {}) {
         data: lista.map(e => e[1]),
         backgroundColor: lista.map(e => {
           const cor = (e[0] === 'Sem categoria' || e[0] === 'Outras') ? corNeutra : corPrincipal;
-          // Com uma categoria escolhida, as outras ficam apagadas
-          return opcoes.selecionada && e[0] !== opcoes.selecionada ? comAlfa(cor.startsWith('#') ? cor : corSuaveAtual(), 0.25) : cor;
+          // Com categorias escolhidas: cada uma na sua cor e as outras apagadas
+          if (opcoes.corDe) return opcoes.corDe(e[0]) || comAlfa(corSuaveAtual(), 0.22);
+          return cor;
         }),
         borderRadius: 5, barThickness: 18
       }]
@@ -5154,51 +5172,94 @@ async function carregarDashboard() {
     const salariosPorMes = calcularSalariosPorMes(cacheSalariosRaw);
     const investimentosPorMes = calcularInvestimentosPorMes(cacheInvestRaw);
     const mesesDisponiveis = obterMesesDisponiveis(despesasPorMes, salariosPorMes);
+    dadosDash = { despesasPorMes, salariosPorMes, investimentosPorMes, mesesDisponiveis };
 
-    const inicial = configurarFiltroAnoMes('select-ano-dashboard', 'select-mes-dashboard', mesesDisponiveis,
-      (mes, ano) => renderizarDashboard(mes, despesasPorMes, mesesDisponiveis, salariosPorMes, investimentosPorMes, ano));
-
-    renderizarDashboard(
-      inicial ? inicial.mes : null, despesasPorMes, mesesDisponiveis, salariosPorMes, investimentosPorMes,
-      inicial ? inicial.ano : null
-    );
+    // Ano que abre: o do mês escolhido no Resumo; senão o ano de hoje
+    const anoHoje = String(new Date().getFullYear());
+    const anos = [...new Set([...mesesDisponiveis.map(m => m.split('/')[1]), anoHoje])].sort();
+    if (!anoDash || !anos.includes(anoDash)) {
+      const anoGlobal = mesEscolhidoGlobal ? mesEscolhidoGlobal.split('/')[1] : null;
+      anoDash = anoGlobal && anos.includes(anoGlobal) ? anoGlobal : anoHoje;
+    }
+    montarSeletorAnoDash(anos);
+    renderizarDashboard();
   } catch (e) {
     mostrarToast('Erro ao carregar dashboard: ' + mensagemErroAmigavel(e), 'erro');
   }
 }
 
 // ===== Filtro dinâmico das Análises (parecido com o Power BI) =====
-// Tocar num mês no gráfico troca o mês da tela inteira; tocar numa categoria
-// filtra: destaca a barra, mostra os lançamentos dela e a evolução no ano.
-let filtroCategoriaDash = null;
-let argsUltimoDashboard = null;
+// Sem nada escolhido, a tela mostra o período todo: o ano escolhido até o mês
+// de hoje. Tocar num mês ou numa categoria liga o filtro; tocar de novo no
+// mesmo item desliga. Dá para escolher vários meses e várias categorias.
+const filtroMesesDash = new Set();
+const filtroCategoriasDash = new Set();
+let anoDash = null;
+let dadosDash = null;
+let rolagemEvolucaoFeita = false;
+// Cores para várias categorias ao mesmo tempo (paleta pensada para daltonismo)
+const PALETA_CATEGORIAS_ESCURO = ['#4C8DFF', '#F28E2B', '#B07AA1', '#59A14F', '#EDC948', '#76B7B2', '#FF9DA7', '#C49A6C'];
+const PALETA_CATEGORIAS_CLARO = ['#2563EB', '#C2410C', '#7E22CE', '#15803D', '#A16207', '#0F766E', '#BE185D', '#78350F'];
+function corDaCategoriaFiltrada(nome) {
+  const paleta = document.documentElement.getAttribute('data-theme') === 'light' ? PALETA_CATEGORIAS_CLARO : PALETA_CATEGORIAS_ESCURO;
+  const i = [...filtroCategoriasDash].indexOf(nome);
+  return i < 0 ? null : paleta[i % paleta.length];
+}
 function nomeCategoriaDe(d) { return d.categoria || 'Sem categoria'; }
-function irParaMesDashboard(mes) {
-  const lista = document.querySelector('#tab-dashboard .sm-lista');
-  if (!lista) return;
-  if (![...lista.options].some(o => o.value === mes)) { mostrarToast('Nenhum lançamento em ' + nomeMesCompleto(mes) + '.', 'erro'); return; }
-  if (lista.value === mes) return;
-  lista.value = mes;
-  lista.dispatchEvent(new Event('change'));
+function listarComE(itens) { return itens.length <= 1 ? (itens[0] || '') : itens.slice(0, -1).join(', ') + ' e ' + itens[itens.length - 1]; }
+function ehMesPrevisao(mesAno) { const h = new Date(); return ordemDoMes(mesAno) > ordemDoMes(MESES[h.getMonth()] + '/' + h.getFullYear()); }
+function somaValores(lista) { return lista.reduce((s, x) => s + (Number(x.valor) || 0), 0); }
+
+// Meses que entram nas contas: os escolhidos; sem escolha, o ano até hoje
+// (meses futuros são previsão e não entram no total sem ninguém pedir).
+function mesesDoPeriodoDash() {
+  if (filtroMesesDash.size) return [...filtroMesesDash].sort((a, b) => ordemDoMes(a) - ordemDoMes(b));
+  const doAno = MESES.map(m => m + '/' + anoDash);
+  const ateHoje = doAno.filter(m => !ehMesPrevisao(m));
+  return ateHoje.length ? ateHoje : doAno;
 }
-function definirFiltroCategoriaDash(categoria) {
-  filtroCategoriaDash = (categoria && categoria !== filtroCategoriaDash) ? categoria : null;
-  if (argsUltimoDashboard) renderizarDashboard(...argsUltimoDashboard);
+function descreverPeriodo(meses) {
+  if (!meses.length) return '—';
+  if (meses.length === 1) return nomeMesCompleto(meses[0]);
+  if (!filtroMesesDash.size) return meses.length === 12 ? anoDash : meses[0].split('/')[0] + '–' + meses[meses.length - 1];
+  return listarComE(meses.map(m => m.split('/')[0])) + '/' + anoDash;
 }
-// Destaca a coluna do mês escolhido no gráfico de meses
+
+function alternarMesDash(mes) {
+  const [, ano] = mes.split('/');
+  if (ano !== anoDash) { anoDash = ano; filtroMesesDash.clear(); rolagemEvolucaoFeita = false; }
+  if (filtroMesesDash.has(mes)) filtroMesesDash.delete(mes);
+  else {
+    const temDado = dadosDash && dadosDash.mesesDisponiveis.includes(mes);
+    if (!temDado) { mostrarToast('Nenhum lançamento em ' + nomeMesCompleto(mes) + '.', 'erro'); return; }
+    filtroMesesDash.add(mes);
+  }
+  // Com um mês só escolhido, Resumo e Investir abrem nele também
+  if (filtroMesesDash.size === 1) mesEscolhidoGlobal = [...filtroMesesDash][0];
+  renderizarDashboard();
+}
+function alternarCategoriaDash(categoria) {
+  if (filtroCategoriasDash.has(categoria)) filtroCategoriasDash.delete(categoria); else filtroCategoriasDash.add(categoria);
+  renderizarDashboard();
+}
+function limparFiltrosDash() { filtroMesesDash.clear(); filtroCategoriasDash.clear(); renderizarDashboard(); }
+
+// Destaca as colunas dos meses escolhidos
 const pluginFaixaMesSelecionado = {
   id: 'faixaMes',
   beforeDatasetsDraw(chart, args, opts) {
-    if (opts == null || opts.indice == null || opts.indice < 0) return;
-    const x = chart.scales.x; if (!x) return;
-    const centro = x.getPixelForValue(opts.indice);
+    const indices = (opts && opts.indices) || [];
+    const x = chart.scales.x; if (!x || !indices.length) return;
     const largura = (x.width / Math.max(1, chart.data.labels.length)) * 0.92;
     const { top, bottom } = chart.chartArea;
     chart.ctx.save();
-    chart.ctx.fillStyle = comAlfa(corSuaveAtual(), 0.14);
-    chart.ctx.beginPath();
-    if (chart.ctx.roundRect) chart.ctx.roundRect(centro - largura / 2, top - 4, largura, bottom - top + 8, 8); else chart.ctx.rect(centro - largura / 2, top - 4, largura, bottom - top + 8);
-    chart.ctx.fill();
+    chart.ctx.fillStyle = comAlfa(corSuaveAtual(), 0.16);
+    indices.forEach(i => {
+      const centro = x.getPixelForValue(i);
+      chart.ctx.beginPath();
+      if (chart.ctx.roundRect) chart.ctx.roundRect(centro - largura / 2, top - 4, largura, bottom - top + 8, 8); else chart.ctx.rect(centro - largura / 2, top - 4, largura, bottom - top + 8);
+      chart.ctx.fill();
+    });
     chart.ctx.restore();
   }
 };
@@ -5207,205 +5268,256 @@ function cursorDeClique(evento, elementos, grafico) {
   grafico.canvas.style.cursor = alvo.length ? 'pointer' : 'default';
 }
 
-function renderizarDashboard(mesSelecionado, despesasPorMes, mesesDisponiveis, salariosPorMes, investimentosPorMes, anoSelecionado) {
-  argsUltimoDashboard = [mesSelecionado, despesasPorMes, mesesDisponiveis, salariosPorMes, investimentosPorMes, anoSelecionado];
-  const despesasDoMes = mesSelecionado ? (despesasPorMes[mesSelecionado] || []) : [];
-  const salariosDoMes = mesSelecionado ? (salariosPorMes[mesSelecionado] || []) : [];
-  const investDoMes = mesSelecionado ? (investimentosPorMes[mesSelecionado] || []) : [];
-  const { linhasTipo } = agruparPorTipoEBanco(despesasDoMes);
+// Seletor de ano das Análises (o mês agora é escolhido tocando no gráfico)
+function montarSeletorAnoDash(anos) {
+  const w = document.getElementById('seletor-ano-dash');
+  const lista = document.getElementById('lista-ano-dash');
+  lista.innerHTML = '';
+  anos.slice().reverse().forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = 'Ano ' + a; lista.appendChild(o); });
+  lista.value = anoDash;
+  const ir = (ano) => {
+    if (!ano || ano === anoDash) return;
+    anoDash = ano; filtroMesesDash.clear(); rolagemEvolucaoFeita = false;
+    lista.value = ano; atualizarSetas(); renderizarDashboard();
+  };
+  const atualizarSetas = () => {
+    const i = anos.indexOf(anoDash);
+    w.querySelector('[data-dir="-1"]').disabled = i <= 0;
+    w.querySelector('[data-dir="1"]').disabled = i < 0 || i >= anos.length - 1;
+  };
+  lista.onchange = () => ir(lista.value);
+  w.querySelectorAll('.sm-seta').forEach(b => { b.onclick = () => ir(anos[anos.indexOf(anoDash) + Number(b.dataset.dir)]); });
+  atualizarSetas();
+}
 
-  // Cards de destaque no topo
-  const totalDespesas = despesasDoMes.reduce((s, d) => s + d.valor, 0);
-  const totalEntradas = salariosDoMes.reduce((s, d) => s + d.valor, 0);
-  const totalInvestido = investDoMes.reduce((s, d) => s + d.valor, 0);
+function renderizarBarraFiltrosDash() {
+  const barra = document.getElementById('filtro-ativo-dash');
+  const chips = document.getElementById('filtro-chips-dash');
+  const ativos = filtroMesesDash.size + filtroCategoriasDash.size;
+  barra.style.display = ativos ? 'flex' : 'none';
+  chips.innerHTML = '';
+  const addChip = (texto, tipo, valor, cor) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'filtro-chip';
+    b.setAttribute('aria-label', 'Tirar o filtro ' + texto);
+    b.innerHTML = (cor ? `<i style="background:${cor}"></i>` : '') + escapeHtml(texto) + ' <span aria-hidden="true">✕</span>';
+    b.onclick = () => tipo === 'mes' ? alternarMesDash(valor) : alternarCategoriaDash(valor);
+    chips.appendChild(b);
+  };
+  [...filtroMesesDash].sort((a, b) => ordemDoMes(a) - ordemDoMes(b)).forEach(m => addChip(m.split('/')[0], 'mes', m));
+  [...filtroCategoriasDash].forEach(c => addChip(c, 'cat', c, corDaCategoriaFiltrada(c)));
+}
+
+function renderizarDashboard() {
+  if (!dadosDash) return;
+  const { despesasPorMes, salariosPorMes, investimentosPorMes } = dadosDash;
+  // Meses de outro ano não valem depois de trocar o ano
+  [...filtroMesesDash].forEach(m => { if (!m.endsWith('/' + anoDash)) filtroMesesDash.delete(m); });
+  const mesesPer = mesesDoPeriodoDash();
+  const periodoTxt = descreverPeriodo(mesesPer);
+  const despesasPer = mesesPer.flatMap(m => (despesasPorMes[m] || []).map(d => Object.assign({}, d, { _mes: m })));
+  const salariosPer = mesesPer.flatMap(m => salariosPorMes[m] || []);
+  const investPer = mesesPer.flatMap(m => investimentosPorMes[m] || []);
+  const passaCategoria = (d) => !filtroCategoriasDash.size || filtroCategoriasDash.has(nomeCategoriaDe(d));
+
+  // Cartões de destaque (ficam no Resumo; aqui só mantém os números em dia)
+  const totalDespesas = somaValores(despesasPer), totalEntradas = somaValores(salariosPer), totalInvestido = somaValores(investPer);
   const saldo = totalEntradas - totalDespesas;
-
   document.getElementById('dash-saldo').textContent = formatarMoeda(saldo);
-  // Saldo negativo troca o cartão azul pelo vermelho
   const cartaoSaldo = document.getElementById('dash-saldo').closest('.dash-destaque');
   cartaoSaldo.classList.toggle('grad-saldo', saldo >= 0);
   cartaoSaldo.classList.toggle('grad-despesa', saldo < 0);
   document.getElementById('dash-entradas').textContent = formatarMoeda(totalEntradas);
   document.getElementById('dash-despesas').textContent = formatarMoeda(totalDespesas);
   document.getElementById('dash-investido').textContent = formatarMoeda(totalInvestido);
-
-  document.getElementById('dash-saldo-sub').textContent = mesSelecionado || '—';
-  document.getElementById('dash-entradas-sub').textContent = plural(salariosDoMes.length, 'lançamento', 'lançamentos');
-  document.getElementById('dash-despesas-sub').textContent = totalEntradas > 0 ? Math.round((totalDespesas / totalEntradas) * 100) + '% das entradas' : plural(despesasDoMes.length, 'lançamento', 'lançamentos');
-  document.getElementById('dash-investido-sub').textContent = plural(investDoMes.length, 'aporte', 'aportes');
-  // (o título do gráfico de meses é escrito junto com ele, mais abaixo)
+  document.getElementById('dash-saldo-sub').textContent = periodoTxt;
+  document.getElementById('dash-entradas-sub').textContent = plural(salariosPer.length, 'lançamento', 'lançamentos');
+  document.getElementById('dash-despesas-sub').textContent = totalEntradas > 0 ? Math.round((totalDespesas / totalEntradas) * 100) + '% das entradas' : plural(despesasPer.length, 'lançamento', 'lançamentos');
+  document.getElementById('dash-investido-sub').textContent = plural(investPer.length, 'aporte', 'aportes');
 
   prepararCoresGraficos();
-  // Gráfico 1: gastos por categoria (barras horizontais)
-  const canvasTipo = document.getElementById('grafico-gastos-tipo');
-  const vazioTipo = document.getElementById('grafico-gastos-tipo-vazio');
-  const linhasCategoriaDash = agruparPorTipoEBanco(despesasDoMes).linhasCategoria;
-  if (graficoGastosTipo) { graficoGastosTipo.destroy(); graficoGastosTipo = null; }
-  const areaTipo = document.getElementById('area-gastos-tipo');
-  const comGasto = linhasCategoriaDash.filter(l => Number(l[1]) > 0);
-  const totalGastoCat = comGasto.reduce((s, l) => s + l[1], 0);
-  const maiorCat = comGasto.slice().sort((a, b) => b[1] - a[1])[0];
-  // Subtítulo diz o achado, não só o total
-  document.getElementById('gastos-tipo-sub').textContent = comGasto.length
-    ? 'Total do mês: ' + formatarMoeda(totalGastoCat) + ' · maior: ' + maiorCat[0] + ' (' + Math.round(maiorCat[1] / totalGastoCat * 100) + '%)' : '';
-  if (comGasto.length === 0) { areaTipo.style.display = 'none'; vazioTipo.style.display = 'block'; }
-  else {
-    areaTipo.style.display = 'block'; vazioTipo.style.display = 'none';
-    graficoGastosTipo = criarGraficoBarrasHorizontais(canvasTipo, areaTipo, comGasto, {
-      selecionada: filtroCategoriaDash,
-      aoClicar: (categoria) => {
-        if (categoria === 'Outras') { mostrarToast('Toque numa categoria específica para filtrar.', 'ok'); return; }
-        definirFiltroCategoriaDash(categoria);
-      }
-    });
-    canvasTipo.setAttribute('aria-label', 'Gastos por categoria em ' + nomeMesCompleto(mesSelecionado) + ': ' + comGasto.slice().sort((a, b) => b[1] - a[1]).map(l => l[0] + ' ' + formatarMoeda(l[1])).join(', '));
-  }
+  renderizarBarraFiltrosDash();
 
-  // Barra "Filtrando por…" e lista de lançamentos da categoria escolhida
-  document.getElementById('filtro-ativo-dash').style.display = filtroCategoriaDash ? 'flex' : 'none';
-  document.getElementById('filtro-ativo-nome').textContent = filtroCategoriaDash || '';
-  document.getElementById('dica-gastos-tipo').style.display = filtroCategoriaDash ? 'none' : (comGasto.length ? 'block' : 'none');
-  const detalhe = document.getElementById('detalhe-categoria-dash');
-  detalhe.innerHTML = '';
-  if (filtroCategoriaDash) {
-    const itensCat = despesasDoMes.filter(d => nomeCategoriaDe(d) === filtroCategoriaDash).sort((a, b) => b.valor - a.valor);
-    const titulo = document.createElement('div');
-    titulo.className = 'det-titulo';
-    titulo.textContent = itensCat.length
-      ? `${plural(itensCat.length, 'lançamento', 'lançamentos')} de ${filtroCategoriaDash} em ${nomeMesCompleto(mesSelecionado)}`
-      : `Sem gastos com ${filtroCategoriaDash} em ${nomeMesCompleto(mesSelecionado)}.`;
-    detalhe.appendChild(titulo);
-    itensCat.forEach(d => {
-      const linha = document.createElement('div');
-      linha.className = 'det-item';
-      linha.innerHTML = `<span class="det-desc">${escapeHtml(d.desc || 'Sem descrição')}<small>${escapeHtml(d.tipo || '')}${d.diaVencimento ? ' · dia ' + escapeHtml(d.diaVencimento) : ''}</small></span><b>${formatarMoeda(d.valor)}</b>`;
-      detalhe.appendChild(linha);
-    });
-  }
-
-  // Gráfico 2: evolução receitas x despesas (últimos até 8 meses)
-  // Mostra os 12 meses do ano selecionado no filtro — assim o gráfico responde
-  // ao filtro de ano e dá a visão anual completa, com meses sem lançamento zerados.
-  // No computador, os 12 meses do ano. No celular, 6 meses em volta do mês
-  // escolhido (12 barras duplas ficavam espremidas e com o rótulo inclinado).
-  let indicesMeses = MESES.map((m, i) => i);
-  if (window.matchMedia('(max-width: 640px)').matches) {
-    const idxSel = mesSelecionado && mesSelecionado.endsWith('/' + anoSelecionado) ? MESES.indexOf(mesSelecionado.split('/')[0]) : new Date().getMonth();
-    // A janela fica presa ao mês de hoje (5 meses para trás e 1 de previsão) e
-    // só anda se o mês escolhido sair dela — assim tocar num mês não "pula" as barras.
-    const idxBase = Number(anoSelecionado) === new Date().getFullYear() ? new Date().getMonth() : idxSel;
-    let inicio = Math.max(0, Math.min(idxBase - 4, 6));
-    if (idxSel < inicio || idxSel > inicio + 5) inicio = Math.max(0, Math.min(idxSel - 4, 6));
-    indicesMeses = indicesMeses.slice(inicio, inicio + 6);
-  }
-  const mesesDoAno = indicesMeses.map(i => MESES[i] + '/' + anoSelecionado);
-  const rotulosMeses = indicesMeses.map(i => MESES[i]);
-  const arrDespesas = mesesDoAno.map(m => (despesasPorMes[m] || []).reduce((s, d) => s + d.valor, 0));
-  const arrReceitas = mesesDoAno.map(m => (salariosPorMes[m] || []).reduce((s, sl) => s + sl.valor, 0));
-  if (graficoEvolucao) { graficoEvolucao.destroy(); graficoEvolucao = null; }
-  // Meses depois de hoje são previsão (parcelas e lançamentos futuros): ficam
-  // em tom mais claro, para não parecerem dinheiro que já entrou ou saiu.
-  const hojeEvo = new Date();
-  const ehPrevisao = (i) => Number(anoSelecionado) > hojeEvo.getFullYear() || (Number(anoSelecionado) === hojeEvo.getFullYear() && indicesMeses[i] > hojeEvo.getMonth());
-  const corRec = corVarAtual('--verde'), corDesp = corVarAtual('--vermelho');
-  const saldoAno = MESES.reduce((s, m, i) => {
-    const futuro = Number(anoSelecionado) > hojeEvo.getFullYear() || (Number(anoSelecionado) === hojeEvo.getFullYear() && i > hojeEvo.getMonth());
-    if (futuro) return s;
-    const chave = m + '/' + anoSelecionado;
-    return s + (salariosPorMes[chave] || []).reduce((t, x) => t + x.valor, 0) - (despesasPorMes[chave] || []).reduce((t, x) => t + x.valor, 0);
-  }, 0);
-  document.getElementById('evolucao-sub').textContent = 'Sobra no ano até agora: ' + formatarMoeda(saldoAno) + (arrReceitas.some((v, i) => ehPrevisao(i) && (v || arrDespesas[i])) ? ' · barras claras = previsão' : '');
-  const idxMesSel = mesesDoAno.indexOf(mesSelecionado);
+  // ---------- Gráfico 1: Receitas x Despesas (ou as categorias escolhidas) mês a mês ----------
+  // Sempre os 12 meses do ano, lado a lado. No celular, o gráfico rola para os lados.
+  const mesesAno = MESES.map(m => m + '/' + anoDash);
+  const temMesEscolhido = filtroMesesDash.size > 0;
+  const alfaDoMes = (i) => {
+    const m = mesesAno[i];
+    if (temMesEscolhido) return filtroMesesDash.has(m) ? (ehMesPrevisao(m) ? 0.6 : 1) : 0.2;
+    return ehMesPrevisao(m) ? 0.35 : 1;
+  };
+  const indicesEscolhidos = mesesAno.map((m, i) => filtroMesesDash.has(m) ? i : -1).filter(i => i >= 0);
   const aoClicarMes = (evento, elementos, grafico) => {
     const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'index', { intersect: false }, false);
-    if (alvo.length) irParaMesDashboard(mesesDoAno[alvo[0].index]);
+    if (alvo.length) alternarMesDash(mesesAno[alvo[0].index]);
   };
   const tituloEvo = document.getElementById('evolucao-titulo');
+  const subEvo = document.getElementById('evolucao-sub');
   const canvasEvo = document.getElementById('grafico-evolucao');
-  if (filtroCategoriaDash) {
-    // Filtro de categoria: o gráfico mostra quanto foi gasto com ela mês a mês
-    const corCat = corVarAtual('--grafico-categoria') || '#4C8DFF';
-    const arrCat = mesesDoAno.map(m => (despesasPorMes[m] || []).filter(d => nomeCategoriaDe(d) === filtroCategoriaDash).reduce((s, d) => s + d.valor, 0));
-    const mesesComGasto = arrCat.filter((v, i) => v > 0 && !ehPrevisao(i));
-    const media = mesesComGasto.length ? mesesComGasto.reduce((s, v) => s + v, 0) / mesesComGasto.length : 0;
-    tituloEvo.textContent = 'Gastos com ' + filtroCategoriaDash + ' em ' + anoSelecionado;
-    document.getElementById('evolucao-sub').textContent = media ? 'Média de ' + formatarMoeda(media) + ' por mês com gasto' : 'Nenhum gasto com essa categoria neste período.';
-    canvasEvo.setAttribute('aria-label', tituloEvo.textContent + ': ' + rotulosMeses.map((m, i) => m + ' ' + formatarMoeda(arrCat[i])).join(', '));
+  const eixos = (empilhado) => ({
+    x: { stacked: empilhado, ticks: { color: corSuaveAtual(), maxRotation: 0, autoSkip: false, font: { size: celularEvo ? 9.5 : 12 } }, grid: { display: false }, border: { display: false } },
+    y: { stacked: empilhado, beginAtZero: true, ticks: { color: corSuaveAtual(), maxTicksLimit: celularEvo ? 5 : 8, font: { size: celularEvo ? 10 : 12 }, callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
+  });
+  const celularEvo = window.matchMedia('(max-width: 640px)').matches;
+  if (graficoEvolucao) { graficoEvolucao.destroy(); graficoEvolucao = null; }
+  const temPrevisaoComDado = mesesAno.some(m => ehMesPrevisao(m) && ((despesasPorMes[m] || []).length || (salariosPorMes[m] || []).length));
+  if (filtroCategoriasDash.size) {
+    // Categorias escolhidas: uma cor por categoria, empilhadas mês a mês
+    const cats = [...filtroCategoriasDash];
+    const datasets = cats.map(c => {
+      const cor = corDaCategoriaFiltrada(c);
+      const dados = mesesAno.map(m => somaValores((despesasPorMes[m] || []).filter(d => nomeCategoriaDe(d) === c)));
+      return { label: c, data: dados, backgroundColor: dados.map((v, i) => comAlfa(cor, alfaDoMes(i))), borderRadius: 4, maxBarThickness: 30, stack: 'categorias' };
+    });
+    const totalCatPer = somaValores(despesasPer.filter(passaCategoria));
+    const mesesComGasto = mesesPer.filter(m => (despesasPorMes[m] || []).some(passaCategoria)).length;
+    tituloEvo.textContent = 'Gastos com ' + listarComE(cats) + ' em ' + anoDash;
+    subEvo.textContent = formatarMoeda(totalCatPer) + ' em ' + periodoTxt + (mesesComGasto > 1 ? ' · média de ' + formatarMoeda(totalCatPer / mesesComGasto) + ' por mês' : '');
+    canvasEvo.setAttribute('aria-label', tituloEvo.textContent + ': ' + MESES.map((m, i) => m + ' ' + formatarMoeda(datasets.reduce((s, d) => s + d.data[i], 0))).join(', '));
     graficoEvolucao = new Chart(canvasEvo.getContext('2d'), {
       type: 'bar',
-      data: { labels: rotulosMeses, datasets: [
-        { label: filtroCategoriaDash, data: arrCat, backgroundColor: arrCat.map((v, i) => ehPrevisao(i) ? comAlfa(corCat, 0.35) : corCat), borderRadius: 6, maxBarThickness: 30 }
-      ] },
+      data: { labels: MESES.slice(), datasets },
       options: {
+        maintainAspectRatio: false,
         onClick: aoClicarMes, onHover: cursorDeClique,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, faixaMes: { indice: idxMesSel },
-          tooltip: { callbacks: { footer: (itens) => ehPrevisao(itens[0].dataIndex) ? 'previsão' : '' } } },
-        scales: {
-          x: { ticks: { color: corSuaveAtual(), maxRotation: 0, autoSkip: true }, grid: { display: false }, border: { display: false } },
-          y: { beginAtZero: true, ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
-        }
+        plugins: {
+          faixaMes: { indices: indicesEscolhidos },
+          legend: { display: cats.length > 1, position: 'top', align: 'end', onClick: null, labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 12,
+            generateLabels: (ch) => ch.data.datasets.map((d, i) => ({ text: d.label, fillStyle: corDaCategoriaFiltrada(d.label), strokeStyle: corDaCategoriaFiltrada(d.label), fontColor: corTextoAtual(), pointStyle: 'circle', hidden: false, datasetIndex: i })) } },
+          tooltip: { callbacks: { footer: (itens) => (cats.length > 1 ? 'Total: ' + formatarMoeda(itens.reduce((s, it) => s + it.parsed.y, 0)) : '') + (ehMesPrevisao(mesesAno[itens[0].dataIndex]) ? ' (previsão)' : '') } }
+        },
+        scales: eixos(true)
       },
       plugins: [pluginFaixaMesSelecionado]
     });
   } else {
-  tituloEvo.innerHTML = 'Receitas x Despesas em <span id="dash-ano-titulo">' + escapeHtml(anoSelecionado || '—') + '</span>';
-  canvasEvo.setAttribute('aria-label', 'Receitas e despesas por mês em ' + anoSelecionado + ': ' + rotulosMeses.map((m, i) => m + ' receitas ' + formatarMoeda(arrReceitas[i]) + ', despesas ' + formatarMoeda(arrDespesas[i])).join('; '));
-  graficoEvolucao = new Chart(document.getElementById('grafico-evolucao').getContext('2d'), {
-    type: 'bar',
-    data: { labels: rotulosMeses, datasets: [
-      { label: 'Receitas', data: arrReceitas, backgroundColor: arrReceitas.map((v, i) => ehPrevisao(i) ? comAlfa(corRec, 0.35) : corRec), borderRadius: 6, maxBarThickness: 26 },
-      { label: 'Despesas', data: arrDespesas, backgroundColor: arrDespesas.map((v, i) => ehPrevisao(i) ? comAlfa(corDesp, 0.35) : corDesp), borderRadius: 6, maxBarThickness: 26 }
-    ] },
-    options: {
-      onClick: aoClicarMes, onHover: cursorDeClique,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        faixaMes: { indice: idxMesSel },
-        // Legenda só informa as cores: clicar nela não esconde (nem risca) nada
-        legend: { position: 'top', align: 'end', onClick: null, labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14,
-          generateLabels: (ch) => ch.data.datasets.map((d, i) => ({ text: d.label, fillStyle: i === 0 ? corRec : corDesp, strokeStyle: i === 0 ? corRec : corDesp, fontColor: corTextoAtual(), pointStyle: 'circle', hidden: false, datasetIndex: i })) } },
-        tooltip: { callbacks: { footer: (itens) => { const i = itens[0].dataIndex; return 'Saldo: ' + formatarMoeda(arrReceitas[i] - arrDespesas[i]) + (ehPrevisao(i) ? ' (previsão)' : ''); } } }
+    const corRec = corVarAtual('--verde'), corDesp = corVarAtual('--vermelho');
+    const arrReceitas = mesesAno.map(m => somaValores(salariosPorMes[m] || []));
+    const arrDespesas = mesesAno.map(m => somaValores(despesasPorMes[m] || []));
+    tituloEvo.innerHTML = 'Receitas x Despesas em <span id="dash-ano-titulo">' + escapeHtml(anoDash || '—') + '</span>';
+    subEvo.textContent = 'Sobra em ' + periodoTxt + ': ' + formatarMoeda(saldo) + (!temMesEscolhido && temPrevisaoComDado ? ' · barras claras = previsão' : '');
+    canvasEvo.setAttribute('aria-label', 'Receitas e despesas por mês em ' + anoDash + ': ' + MESES.map((m, i) => m + ' receitas ' + formatarMoeda(arrReceitas[i]) + ', despesas ' + formatarMoeda(arrDespesas[i])).join('; '));
+    graficoEvolucao = new Chart(canvasEvo.getContext('2d'), {
+      type: 'bar',
+      data: { labels: MESES.slice(), datasets: [
+        { label: 'Receitas', data: arrReceitas, backgroundColor: arrReceitas.map((v, i) => comAlfa(corRec, alfaDoMes(i))), borderRadius: 6, maxBarThickness: 26 },
+        { label: 'Despesas', data: arrDespesas, backgroundColor: arrDespesas.map((v, i) => comAlfa(corDesp, alfaDoMes(i))), borderRadius: 6, maxBarThickness: 26 }
+      ] },
+      options: {
+        maintainAspectRatio: false,
+        onClick: aoClicarMes, onHover: cursorDeClique,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          faixaMes: { indices: indicesEscolhidos },
+          // Legenda só informa as cores: clicar nela não esconde (nem risca) nada
+          legend: { position: 'top', align: 'end', onClick: null, labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14,
+            generateLabels: (ch) => ch.data.datasets.map((d, i) => ({ text: d.label, fillStyle: i === 0 ? corRec : corDesp, strokeStyle: i === 0 ? corRec : corDesp, fontColor: corTextoAtual(), pointStyle: 'circle', hidden: false, datasetIndex: i })) } },
+          tooltip: { callbacks: { footer: (itens) => { const i = itens[0].dataIndex; return 'Saldo: ' + formatarMoeda(arrReceitas[i] - arrDespesas[i]) + (ehMesPrevisao(mesesAno[i]) ? ' (previsão)' : ''); } } }
+        },
+        scales: eixos(false)
       },
-      scales: {
-        x: { ticks: { color: corSuaveAtual(), maxRotation: 0, autoSkip: true }, grid: { display: false }, border: { display: false } },
-        y: { beginAtZero: true, ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
-      }
-    },
-    plugins: [pluginFaixaMesSelecionado]
-  });
+      plugins: [pluginFaixaMesSelecionado]
+    });
+  }
+  // No celular, abre o gráfico já mostrando o mês de hoje (uma vez por ano escolhido)
+  const rolagem = document.getElementById('evo-rolagem');
+  if (rolagem && !rolagemEvolucaoFeita && rolagem.scrollWidth > rolagem.clientWidth) {
+    const h = new Date();
+    const idxFoco = Number(anoDash) === h.getFullYear() ? h.getMonth() : 11;
+    rolagem.scrollLeft = Math.max(0, (idxFoco + 0.5) / 12 * rolagem.scrollWidth - rolagem.clientWidth * 0.7);
+    rolagemEvolucaoFeita = true;
   }
 
-  // Gráfico 3: investido acumulado ao longo do tempo
-  const mesesInvest = ordenarMeses(Object.keys(investimentosPorMes));
+  // ---------- Gráfico 2: gastos por categoria no período ----------
+  const canvasTipo = document.getElementById('grafico-gastos-tipo');
+  const vazioTipo = document.getElementById('grafico-gastos-tipo-vazio');
+  const areaTipo = document.getElementById('area-gastos-tipo');
+  if (graficoGastosTipo) { graficoGastosTipo.destroy(); graficoGastosTipo = null; }
+  const comGasto = agruparPorTipoEBanco(despesasPer).linhasCategoria.filter(l => Number(l[1]) > 0);
+  const totalGastoCat = comGasto.reduce((s, l) => s + l[1], 0);
+  const maiorCat = comGasto.slice().sort((a, b) => b[1] - a[1])[0];
+  const subTipo = document.getElementById('gastos-tipo-sub');
+  if (!comGasto.length) subTipo.textContent = '';
+  else if (filtroCategoriasDash.size) {
+    const escolhido = comGasto.filter(l => filtroCategoriasDash.has(l[0])).reduce((s, l) => s + l[1], 0);
+    subTipo.textContent = 'Escolhidas: ' + formatarMoeda(escolhido) + ' de ' + formatarMoeda(totalGastoCat) + ' (' + Math.round(escolhido / totalGastoCat * 100) + '%) em ' + periodoTxt;
+  } else {
+    subTipo.textContent = 'Total em ' + periodoTxt + ': ' + formatarMoeda(totalGastoCat) + ' · maior: ' + maiorCat[0] + ' (' + Math.round(maiorCat[1] / totalGastoCat * 100) + '%)';
+  }
+  vazioTipo.textContent = 'Nenhum gasto em ' + periodoTxt + '.';
+  if (!comGasto.length) { areaTipo.style.display = 'none'; vazioTipo.style.display = 'block'; }
+  else {
+    areaTipo.style.display = 'block'; vazioTipo.style.display = 'none';
+    graficoGastosTipo = criarGraficoBarrasHorizontais(canvasTipo, areaTipo, comGasto, {
+      corDe: filtroCategoriasDash.size ? (nome) => corDaCategoriaFiltrada(nome) : null,
+      aoClicar: (categoria) => {
+        if (categoria === 'Outras') { mostrarToast('Toque numa categoria específica para filtrar.', 'ok'); return; }
+        alternarCategoriaDash(categoria);
+      }
+    });
+    canvasTipo.setAttribute('aria-label', 'Gastos por categoria em ' + periodoTxt + ': ' + comGasto.slice().sort((a, b) => b[1] - a[1]).map(l => l[0] + ' ' + formatarMoeda(l[1])).join(', '));
+  }
+  document.getElementById('dica-gastos-tipo').style.display = comGasto.length && !filtroCategoriasDash.size ? 'block' : 'none';
+
+  // Lançamentos das categorias escolhidas no período
+  const detalhe = document.getElementById('detalhe-categoria-dash');
+  detalhe.innerHTML = '';
+  if (filtroCategoriasDash.size) {
+    const itens = despesasPer.filter(passaCategoria).sort((a, b) => b.valor - a.valor);
+    const LIMITE = 40;
+    const titulo = document.createElement('div');
+    titulo.className = 'det-titulo';
+    titulo.textContent = itens.length
+      ? `${plural(itens.length, 'lançamento', 'lançamentos')} de ${listarComE([...filtroCategoriasDash])} em ${periodoTxt}` + (itens.length > LIMITE ? ` (os ${LIMITE} maiores)` : '')
+      : `Sem gastos com ${listarComE([...filtroCategoriasDash])} em ${periodoTxt}.`;
+    detalhe.appendChild(titulo);
+    const variosMeses = mesesPer.length > 1;
+    itens.slice(0, LIMITE).forEach(d => {
+      const cor = filtroCategoriasDash.size > 1 ? corDaCategoriaFiltrada(nomeCategoriaDe(d)) : null;
+      const extra = [variosMeses ? d._mes.split('/')[0] : '', filtroCategoriasDash.size > 1 ? nomeCategoriaDe(d) : '', d.tipo || ''].filter(Boolean).join(' · ');
+      const linha = document.createElement('div');
+      linha.className = 'det-item';
+      linha.innerHTML = `<span class="det-desc"><span>${cor ? `<i class="det-cor" style="background:${cor}"></i>` : ''}${escapeHtml(d.desc || 'Sem descrição')}</span><small>${escapeHtml(extra)}</small></span><b>${formatarMoeda(d.valor)}</b>`;
+      detalhe.appendChild(linha);
+    });
+  }
+
+  // ---------- Gráfico 3: investido acumulado ----------
   const canvasInvest = document.getElementById('grafico-investido-acumulado');
   const vazioInvest = document.getElementById('grafico-investido-vazio');
   if (graficoInvestidoAcumulado) { graficoInvestidoAcumulado.destroy(); graficoInvestidoAcumulado = null; }
-  if (mesesInvest.length === 0) { canvasInvest.style.display = 'none'; vazioInvest.style.display = 'block'; }
-  else {
+  const mesesInvest = Object.keys(investimentosPorMes).filter(m => (investimentosPorMes[m] || []).length).sort((a, b) => ordemDoMes(a) - ordemDoMes(b));
+  if (mesesInvest.length === 0) {
+    canvasInvest.style.display = 'none'; vazioInvest.style.display = 'block';
+    document.getElementById('investido-sub').textContent = '';
+  } else {
     canvasInvest.style.display = 'block'; vazioInvest.style.display = 'none';
-    // Linha contínua do primeiro aporte até o mês escolhido (meses sem aporte
-    // repetem o valor), para mostrar a evolução real — antes só apareciam os
-    // meses que tinham lançamento.
+    // Linha contínua do primeiro aporte até o fim do período escolhido
     const primeiroMes = mesesInvest[0];
-    const ultimoMes = mesSelecionado && ordemDoMes(mesSelecionado) >= ordemDoMes(primeiroMes) ? mesSelecionado : mesesInvest[mesesInvest.length - 1];
+    const fimPeriodo = mesesPer[mesesPer.length - 1];
+    const ultimoMes = fimPeriodo && ordemDoMes(fimPeriodo) >= ordemDoMes(primeiroMes) ? fimPeriodo : mesesInvest[mesesInvest.length - 1];
     const sequencia = mesesEntre(primeiroMes, ultimoMes);
     let acumulado = 0;
-    const dadosAcumulado = sequencia.map(m => { acumulado += (investimentosPorMes[m] || []).reduce((s, i) => s + i.valor, 0); return acumulado; });
+    const dadosAcumulado = sequencia.map(m => { acumulado += somaValores(investimentosPorMes[m] || []); return acumulado; });
     document.getElementById('investido-sub').textContent = formatarMoeda(acumulado) + ' até ' + ultimoMes;
+    const corOuro = corVarAtual('--dourado');
     const ctxInvest = canvasInvest.getContext('2d');
     const gradiente = ctxInvest.createLinearGradient(0, 0, 0, 220);
     gradiente.addColorStop(0, 'rgba(245,185,66,0.35)');
     gradiente.addColorStop(1, 'rgba(245,185,66,0.02)');
     graficoInvestidoAcumulado = new Chart(ctxInvest, {
       type: 'line',
-      data: { labels: sequencia.map(m => m.replace('/20', '/')), datasets: [{ label: 'Acumulado', data: dadosAcumulado, pointRadius: sequencia.length <= 12 ? 3 : 0, pointBackgroundColor: corVarAtual('--dourado'), borderColor: corVarAtual('--dourado'), backgroundColor: gradiente, borderWidth: 2.5, fill: true, tension: 0.3, cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 5 }] },
+      data: { labels: sequencia.map(m => m.replace('/20', '/')), datasets: [{ label: 'Acumulado', data: dadosAcumulado,
+        pointRadius: sequencia.map(m => filtroMesesDash.has(m) ? 6 : (sequencia.length <= 12 ? 3 : 0)),
+        pointBackgroundColor: corOuro, borderColor: corOuro, backgroundColor: gradiente, borderWidth: 2.5, fill: true, tension: 0.3, cubicInterpolationMode: 'monotone' }] },
       options: {
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => 'Acumulado: ' + formatarMoeda(c.parsed.y) } } },
         interaction: { intersect: false, mode: 'index' },
         onClick: (evento, elementos, grafico) => {
           const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'index', { intersect: false }, false);
-          if (alvo.length) irParaMesDashboard(sequencia[alvo[0].index]);
+          if (alvo.length) alternarMesDash(sequencia[alvo[0].index]);
         },
         onHover: cursorDeClique,
         scales: {
@@ -5416,18 +5528,23 @@ function renderizarDashboard(mesSelecionado, despesasPorMes, mesesDisponiveis, s
     });
   }
 
-  // Barras: metas de investimento por tipo
-  const investimentosDoMes = mesSelecionado ? (investimentosPorMes[mesSelecionado] || []) : [];
-  const { linhasTipo: linhasTipoInvest } = agruparPorTipoEBanco(investimentosDoMes);
-  const metaTipoMap = (dadosUsuario.metasInvestimento || {}).porTipo || {};
-  const statusMetas = calcularStatusMetaInvestimento(linhasTipoInvest, metaTipoMap);
+  // ---------- Metas de investimento no período (meta mensal × meses) ----------
+  const nMeses = mesesPer.length || 1;
+  const { linhasTipo: linhasTipoInvest } = agruparPorTipoEBanco(investPer);
+  const metaMensal = (dadosUsuario.metasInvestimento || {}).porTipo || {};
+  const metaPeriodo = {};
+  Object.keys(metaMensal).forEach(k => { metaPeriodo[k] = (Number(metaMensal[k]) || 0) * nMeses; });
+  const statusMetas = calcularStatusMetaInvestimento(linhasTipoInvest, metaPeriodo);
+  document.getElementById('metas-titulo').textContent = nMeses === 1 ? 'Metas de investimento do mês' : 'Metas de investimento no período';
+  document.getElementById('metas-sub').textContent = nMeses === 1 ? '' : periodoTxt + ' · meta mensal × ' + nMeses + ' meses';
   renderizarBarrasProgresso('barras-metas-dashboard', statusMetas.map(s => ({
     nome: s.nome, atual: s.aportado, meta: s.meta, pct: s.meta > 0 ? s.pctAtingido : null, status: s.status
   })));
 
   renderizarGraficoCompras();
-  renderizarFaturasDoMes(mesSelecionado, despesasPorMes);
-  renderizar503020(despesasDoMes, totalEntradas, totalInvestido);
+  document.getElementById('faturas-titulo').textContent = nMeses === 1 ? 'Faturas do mês' : 'Faturas do período';
+  renderizarFaturasDoMes(mesesPer, despesasPorMes);
+  renderizar503020(despesasPer, totalEntradas, totalInvestido);
 }
 
 // Mostra os três grupos do 50/30/20 com barra de progresso e uma leitura
@@ -5497,7 +5614,7 @@ function gerarDica503020(grupos) {
 
 // Mostra, pra cada cartão cadastrado, quanto fecha na fatura do mês escolhido,
 // quando vence e quanto do limite já foi comprometido.
-function renderizarFaturasDoMes(mesSelecionado, despesasPorMes) {
+function renderizarFaturasDoMes(meses, despesasPorMes) {
   const container = document.getElementById('lista-faturas-dashboard');
   if (!container) return;
   const cartoes = dadosUsuario.config.cartoes || [];
@@ -5508,7 +5625,10 @@ function renderizarFaturasDoMes(mesSelecionado, despesasPorMes) {
     return;
   }
 
-  const despesasDoMes = mesSelecionado ? (despesasPorMes[mesSelecionado] || []) : [];
+  const listaMeses = Array.isArray(meses) ? meses : (meses ? [meses] : []);
+  const despesasDoMes = listaMeses.flatMap(m => despesasPorMes[m] || []);
+  // Com vários meses somados, "% do limite" não faz sentido (o limite é por fatura)
+  const umMes = listaMeses.length === 1;
   let algumaFatura = false;
 
   cartoes.forEach(c => {
@@ -5517,7 +5637,7 @@ function renderizarFaturasDoMes(mesSelecionado, despesasPorMes) {
     if (total === 0) return;
     algumaFatura = true;
 
-    const pctLimite = c.limite > 0 ? Math.min(total / c.limite, 1) * 100 : 0;
+    const pctLimite = umMes && c.limite > 0 ? Math.min(total / c.limite, 1) * 100 : 0;
     const corBarra = pctLimite > 85 ? corVarAtual('--vermelho') : (pctLimite > 60 ? corVarAtual('--dourado') : corVarAtual('--verde'));
 
     const div = document.createElement('div');
@@ -5527,12 +5647,12 @@ function renderizarFaturasDoMes(mesSelecionado, despesasPorMes) {
         <span class="nome">💳 ${escapeHtml(c.nome)}</span>
         <span class="valores"><b style="color:var(--texto);">${formatarMoeda(total)}</b></span>
       </div>
-      ${c.limite > 0 ? `<div class="barra-progresso"><div class="barra-progresso-fill" style="width:${pctLimite}%; background:${corBarra};"></div></div>` : ''}
-      <div class="sub-status">${plural(itens.length, 'compra', 'compras')} · vence dia ${Number(c.diaVencimento) || '-'}${c.limite > 0 ? ' · ' + Math.round(pctLimite) + '% do limite' : ''}</div>`;
+      ${umMes && c.limite > 0 ? `<div class="barra-progresso"><div class="barra-progresso-fill" style="width:${pctLimite}%; background:${corBarra};"></div></div>` : ''}
+      <div class="sub-status">${plural(itens.length, 'compra', 'compras')}${umMes ? ` · vence dia ${Number(c.diaVencimento) || '-'}${c.limite > 0 ? ' · ' + Math.round(pctLimite) + '% do limite' : ''}` : ` em ${listaMeses.length} meses`}</div>`;
     container.appendChild(div);
   });
 
-  if (!algumaFatura) container.innerHTML = '<div class="vazio">Nenhuma compra no cartão neste mês.</div>';
+  if (!algumaFatura) container.innerHTML = `<div class="vazio">Nenhuma compra no cartão ${umMes ? 'neste mês' : 'neste período'}.</div>`;
 }
 
 let graficoComprasCategoria = null;
@@ -9899,8 +10019,7 @@ async function gerarPlanilhaExcel(d) {
 
 // ---------- Janela de exportação ----------
 function abrirModalExportar() {
-  const seletor = document.getElementById('select-mes-dashboard');
-  const mesAno = seletor && seletor.value ? seletor.value : null;
+  const mesAno = filtroMesesDash.size === 1 ? [...filtroMesesDash][0] : (mesEscolhidoGlobal || null);
   document.getElementById('exportar-mes').value = mesAno ? mesAnoParaInputMonth(mesAno) : mesAtualParaInput();
   document.getElementById('exportar-status').textContent = '';
   renderizarIcones(document.getElementById('modal-exportar'));
