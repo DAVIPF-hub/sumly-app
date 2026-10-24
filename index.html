@@ -30,6 +30,7 @@
        verde é claro, então o texto em cima dele precisa ser escuro: branco dava
        1,8:1 de contraste; este dá 10,7:1. */
     --sobre-cor: #06140E;
+    --grafico-categoria: #4C8DFF;
     --verde: #00B87C; --verde-glow: rgba(0,184,124,0.12);
     --acento: #5BA0FF; --acento-glow: rgba(91,160,255,0.12);
     --vermelho: #FF6B6B; --vermelho-glow: rgba(255,107,107,0.10);
@@ -45,6 +46,7 @@
     --azul: #007A52; --azul-glow: rgba(0,122,82,0.10);
     --verde: #00774F; --verde-glow: rgba(0,119,79,0.10);
     --sobre-cor: #FFFFFF;
+    --grafico-categoria: #2563EB;
     --acento: #3B7DF5; --acento-glow: rgba(59,125,245,0.10);
     --vermelho: #C2410C; --vermelho-glow: rgba(194,65,12,0.08);
     --dourado: #9A6B00; --dourado-glow: rgba(154,107,0,0.08);
@@ -758,6 +760,17 @@
     .dash-destaque-valor { font-size: 24px; }
   }
   .grafico-card canvas { max-height: 220px; }
+  .grafico-card .grafico-area { position: relative; width: 100%; }
+  .grafico-card .grafico-area canvas { max-height: none; }
+  .grafico-card .grafico-sub { font-size: 12px; color: var(--texto-suave); margin: -4px 0 10px; font-variant-numeric: tabular-nums; }
+  .grafico-card .grafico-sub:empty { display: none; }
+  .grafico-card .grafico-dica { font-size: 11.5px; color: var(--texto-suave); margin-top: 8px; }
+  .filtro-ativo { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: linear-gradient(var(--azul-glow), var(--azul-glow)), var(--bg-card); box-shadow: 0 6px 16px rgba(0,0,0,0.18); border: 1px solid var(--azul); color: var(--texto); border-radius: 12px; padding: 8px 8px 8px 14px; margin-bottom: 14px; font-size: 13px; position: sticky; top: 64px; z-index: 5; }
+  .filtro-ativo button { background: var(--bg-card); color: var(--texto); border: 1px solid var(--borda); border-radius: 9px; padding: 0 12px; min-height: 36px; font-weight: 700; font-size: 12.5px; cursor: pointer; margin: 0; width: auto; }
+  #detalhe-categoria-dash .det-titulo { font-size: 12.5px; font-weight: 700; margin: 14px 0 6px; }
+  #detalhe-categoria-dash .det-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--borda); font-size: 13px; font-variant-numeric: tabular-nums; }
+  #detalhe-categoria-dash .det-desc { display: flex; flex-direction: column; min-width: 0; }
+  #detalhe-categoria-dash .det-desc small { color: var(--texto-suave); font-size: 11.5px; }
   .item-progresso { margin-bottom: 14px; }
   .item-progresso .cabecalho { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
   .item-progresso .cabecalho .nome { color: var(--texto); }
@@ -1219,25 +1232,36 @@
           </div>
         </div>
 
+        <div class="filtro-ativo" id="filtro-ativo-dash" style="display:none;">
+          <span>Filtrando por <b id="filtro-ativo-nome"></b></span>
+          <button type="button" id="btn-limpar-filtro-dash" aria-label="Limpar filtro">Limpar ✕</button>
+        </div>
+
         <div class="grafico-card destaque-ano">
-          <div class="grafico-titulo">📅 Receitas x Despesas em <span id="dash-ano-titulo">—</span></div>
-          <canvas id="grafico-evolucao"></canvas>
+          <div class="grafico-titulo"><span data-icone="grafico"></span><span id="evolucao-titulo">Receitas x Despesas em <span id="dash-ano-titulo">—</span></span></div>
+          <div class="grafico-sub" id="evolucao-sub"></div>
+          <canvas id="grafico-evolucao" role="img"></canvas>
+          <div class="grafico-dica">Toque num mês para ver aquele mês na tela toda.</div>
         </div>
 
         <div class="grafico-card">
           <div class="grafico-titulo"><span data-icone="pizza"></span>Gastos por categoria</div>
-          <canvas id="grafico-gastos-tipo"></canvas>
+          <div class="grafico-sub" id="gastos-tipo-sub"></div>
+          <div class="grafico-area" id="area-gastos-tipo"><canvas id="grafico-gastos-tipo"></canvas></div>
+          <div class="grafico-dica" id="dica-gastos-tipo">Toque numa categoria para ver os lançamentos e a evolução no ano.</div>
+          <div id="detalhe-categoria-dash"></div>
           <div class="vazio" id="grafico-gastos-tipo-vazio" style="display:none;">Nenhum gasto este mês.</div>
         </div>
 
         <div class="grafico-card">
           <div class="grafico-titulo"><span data-icone="tendencia"></span>Investido acumulado</div>
+          <div class="grafico-sub" id="investido-sub"></div>
           <canvas id="grafico-investido-acumulado"></canvas>
           <div class="vazio" id="grafico-investido-vazio" style="display:none;">Nenhum investimento lançado ainda.</div>
         </div>
 
         <div class="grafico-card">
-          <div class="grafico-titulo"><span data-icone="alvo"></span>Metas de investimento</div>
+          <div class="grafico-titulo"><span data-icone="alvo"></span>Metas de investimento do mês</div>
           <div id="barras-metas-dashboard"></div>
         </div>
 
@@ -1259,7 +1283,7 @@
             <div class="card-mini"><div class="titulo">Comprado</div><div class="valor" style="color:var(--verde);" id="dash-compras-total-comprado">R$ 0,00</div></div>
             <div class="card-mini"><div class="titulo">Pendente</div><div class="valor" style="color:var(--dourado);" id="dash-compras-total-pendente">R$ 0,00</div></div>
           </div>
-          <canvas id="grafico-compras-categoria"></canvas>
+          <div class="grafico-area" id="area-compras-categoria"><canvas id="grafico-compras-categoria"></canvas></div>
           <div class="vazio" id="grafico-compras-vazio" style="display:none;">Nenhuma compra registrada ainda.</div>
         </div>
       </div>
@@ -2416,6 +2440,13 @@ function aplicarTema(tema) {
   // Só troca o atributo — o visual do toggle (bolinha e cores) reage por CSS.
   document.documentElement.setAttribute('data-theme', tema);
   localStorage.setItem(THEME_KEY, tema);
+  // Os gráficos guardam as cores de quando foram desenhados: se a tela de
+  // Análises estiver aberta, redesenha com as cores do tema novo (antes as
+  // legendas ficavam brancas no tema claro e as linhas de grade, escuras).
+  try {
+    const aba = document.getElementById('tab-dashboard');
+    if (aba && aba.classList.contains('active') && typeof carregarDashboard === 'function') carregarDashboard();
+  } catch (e) {}
 }
 (function initTema() { aplicarTema(localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark'); })();
 
@@ -4027,7 +4058,7 @@ function agruparPorTipoEBanco(lista) {
     const t = tipo || '(sem tipo)', b = banco || '(sem banco)';
     // Despesas antigas não têm categoria — caem num grupo próprio, que serve
     // de lembrete pra pessoa ir classificando aos poucos.
-    const cat = categoria || '(sem categoria)';
+    const cat = categoria || 'Sem categoria';
     totalPorTipo[t] = (totalPorTipo[t] || 0) + valor;
     totalPorBanco[b] = (totalPorBanco[b] || 0) + valor;
     totalPorCategoria[cat] = (totalPorCategoria[cat] || 0) + valor;
@@ -4358,6 +4389,8 @@ document.querySelectorAll('#modal-mais [data-ir]').forEach(btn => btn.addEventLi
   mostrarTab(aba);
   if (subaba) { const b = document.querySelector(`.subnav-btn[data-subtab="${subaba}"]`); if (b) b.click(); }
 }));
+
+document.getElementById('btn-limpar-filtro-dash').addEventListener('click', () => definirFiltroCategoriaDash(null));
 
 // Início: alterna entre Resumo e Análises
 document.querySelectorAll('.seg-inicio button').forEach(b => b.addEventListener('click', () => mostrarTab(b.dataset.irAba)));
@@ -5000,6 +5033,111 @@ const pluginTotalNoCentro = {
   }
 };
 
+// Cores dos gráficos sempre lidas do tema atual (texto, texto suave e grade)
+function prepararCoresGraficos() {
+  if (!window.Chart) return;
+  Chart.defaults.color = corSuaveAtual();
+  Chart.defaults.borderColor = corBordaAtual();
+}
+// "#00B87C" + 0.35 -> "rgba(0,184,124,0.35)"
+function comAlfa(cor, alfa) {
+  const h = String(cor).trim().replace('#', '');
+  if (h.length !== 6) return cor;
+  return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${alfa})`;
+}
+// Lista de meses seguidos entre dois "MMM/AAAA" (inclusive)
+function mesesEntre(inicio, fim) {
+  const [mi, ai] = inicio.split('/'), [mf, af] = fim.split('/');
+  let m = MESES.indexOf(mi), a = Number(ai);
+  const mFim = MESES.indexOf(mf), aFim = Number(af), lista = [];
+  let guarda = 0;
+  while ((a < aFim || (a === aFim && m <= mFim)) && guarda++ < 240) {
+    lista.push(MESES[m] + '/' + a);
+    if (++m > 11) { m = 0; a++; }
+  }
+  return lista;
+}
+// Escreve valor e % ao lado de cada barra (rótulo direto, sem legenda)
+const pluginRotuloNaBarra = {
+  id: 'rotuloNaBarra',
+  afterDatasetsDraw(chart) {
+    if (chart.options.indexAxis !== 'y') return;
+    const dados = (chart.data.datasets[0] || {}).data || [];
+    const total = dados.reduce((s, v) => s + (Number(v) || 0), 0);
+    const meta = chart.getDatasetMeta(0);
+    const { ctx } = chart;
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    meta.data.forEach((barra, i) => {
+      const valor = formatarMoeda(dados[i]);
+      const pct = total ? Math.round((dados[i] / total) * 100) + '%' : '';
+      ctx.font = `700 11.5px ${Chart.defaults.font.family}`;
+      ctx.fillStyle = corTextoAtual();
+      ctx.fillText(valor, barra.x + 8, barra.y);
+      const largura = ctx.measureText(valor).width;
+      ctx.font = `600 11px ${Chart.defaults.font.family}`;
+      ctx.fillStyle = corSuaveAtual();
+      ctx.fillText(pct, barra.x + 14 + largura, barra.y);
+    });
+    ctx.restore();
+  }
+};
+// Barras horizontais ordenadas (para "para onde foi o dinheiro"): mais fáceis de
+// comparar do que fatias de rosca, sem legenda e sem item riscado. Valores
+// zerados não entram; acima de 6 categorias, o resto vira "Outras".
+function criarGraficoBarrasHorizontais(canvas, area, entradas, opcoes = {}) {
+  let lista = entradas.filter(e => Number(e[1]) > 0).sort((a, b) => b[1] - a[1]);
+  if (lista.length > 7) {
+    const resto = lista.slice(6).reduce((s, e) => s + e[1], 0);
+    lista = lista.slice(0, 6).concat([['Outras', resto]]);
+  }
+  area.style.height = (lista.length * 32 + 12) + 'px';
+  const corPrincipal = corVarAtual('--grafico-categoria') || '#4C8DFF';
+  const corNeutra = comAlfa(corSuaveAtual(), 0.55);
+  const total = lista.reduce((s, e) => s + e[1], 0);
+  return new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: lista.map(e => e[0]),
+      datasets: [{
+        data: lista.map(e => e[1]),
+        backgroundColor: lista.map(e => {
+          const cor = (e[0] === 'Sem categoria' || e[0] === 'Outras') ? corNeutra : corPrincipal;
+          // Com uma categoria escolhida, as outras ficam apagadas
+          return opcoes.selecionada && e[0] !== opcoes.selecionada ? comAlfa(cor.startsWith('#') ? cor : corSuaveAtual(), 0.25) : cor;
+        }),
+        borderRadius: 5, barThickness: 18
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      onClick: opcoes.aoClicar ? (evento, elementos, grafico) => {
+        const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'y', { intersect: false }, false);
+        if (alvo.length) opcoes.aoClicar(grafico.data.labels[alvo[0].index]);
+      } : undefined,
+      onHover: opcoes.aoClicar ? (evento, elementos, grafico) => {
+        const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'y', { intersect: false }, false);
+        grafico.canvas.style.cursor = alvo.length ? 'pointer' : 'default';
+      } : undefined,
+      layout: { padding: { right: 128 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => formatarMoeda(c.parsed.x) + (total ? ' · ' + Math.round((c.parsed.x / total) * 100) + '%' : '') } }
+      },
+      scales: {
+        x: { display: false, beginAtZero: true },
+        y: {
+          grid: { display: false }, border: { display: false },
+          ticks: { color: corTextoAtual(), font: { size: 12, weight: '600' },
+            callback(valor) { const r = this.getLabelForValue(valor); return r.length > 16 ? r.slice(0, 15) + '…' : r; } }
+        }
+      }
+    },
+    plugins: [pluginRotuloNaBarra]
+  });
+}
+
 // Formato curto pros eixos (R$ 1,2 mil em vez de 1200) — economiza espaço e
 // fica bem mais legível, principalmente no celular.
 function formatarValorCurto(v) {
@@ -5029,7 +5167,48 @@ async function carregarDashboard() {
   }
 }
 
+// ===== Filtro dinâmico das Análises (parecido com o Power BI) =====
+// Tocar num mês no gráfico troca o mês da tela inteira; tocar numa categoria
+// filtra: destaca a barra, mostra os lançamentos dela e a evolução no ano.
+let filtroCategoriaDash = null;
+let argsUltimoDashboard = null;
+function nomeCategoriaDe(d) { return d.categoria || 'Sem categoria'; }
+function irParaMesDashboard(mes) {
+  const lista = document.querySelector('#tab-dashboard .sm-lista');
+  if (!lista) return;
+  if (![...lista.options].some(o => o.value === mes)) { mostrarToast('Nenhum lançamento em ' + nomeMesCompleto(mes) + '.', 'erro'); return; }
+  if (lista.value === mes) return;
+  lista.value = mes;
+  lista.dispatchEvent(new Event('change'));
+}
+function definirFiltroCategoriaDash(categoria) {
+  filtroCategoriaDash = (categoria && categoria !== filtroCategoriaDash) ? categoria : null;
+  if (argsUltimoDashboard) renderizarDashboard(...argsUltimoDashboard);
+}
+// Destaca a coluna do mês escolhido no gráfico de meses
+const pluginFaixaMesSelecionado = {
+  id: 'faixaMes',
+  beforeDatasetsDraw(chart, args, opts) {
+    if (opts == null || opts.indice == null || opts.indice < 0) return;
+    const x = chart.scales.x; if (!x) return;
+    const centro = x.getPixelForValue(opts.indice);
+    const largura = (x.width / Math.max(1, chart.data.labels.length)) * 0.92;
+    const { top, bottom } = chart.chartArea;
+    chart.ctx.save();
+    chart.ctx.fillStyle = comAlfa(corSuaveAtual(), 0.14);
+    chart.ctx.beginPath();
+    if (chart.ctx.roundRect) chart.ctx.roundRect(centro - largura / 2, top - 4, largura, bottom - top + 8, 8); else chart.ctx.rect(centro - largura / 2, top - 4, largura, bottom - top + 8);
+    chart.ctx.fill();
+    chart.ctx.restore();
+  }
+};
+function cursorDeClique(evento, elementos, grafico) {
+  const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'index', { intersect: false }, false);
+  grafico.canvas.style.cursor = alvo.length ? 'pointer' : 'default';
+}
+
 function renderizarDashboard(mesSelecionado, despesasPorMes, mesesDisponiveis, salariosPorMes, investimentosPorMes, anoSelecionado) {
+  argsUltimoDashboard = [mesSelecionado, despesasPorMes, mesesDisponiveis, salariosPorMes, investimentosPorMes, anoSelecionado];
   const despesasDoMes = mesSelecionado ? (despesasPorMes[mesSelecionado] || []) : [];
   const salariosDoMes = mesSelecionado ? (salariosPorMes[mesSelecionado] || []) : [];
   const investDoMes = mesSelecionado ? (investimentosPorMes[mesSelecionado] || []) : [];
@@ -5054,49 +5233,148 @@ function renderizarDashboard(mesSelecionado, despesasPorMes, mesesDisponiveis, s
   document.getElementById('dash-entradas-sub').textContent = plural(salariosDoMes.length, 'lançamento', 'lançamentos');
   document.getElementById('dash-despesas-sub').textContent = totalEntradas > 0 ? Math.round((totalDespesas / totalEntradas) * 100) + '% das entradas' : plural(despesasDoMes.length, 'lançamento', 'lançamentos');
   document.getElementById('dash-investido-sub').textContent = plural(investDoMes.length, 'aporte', 'aportes');
-  document.getElementById('dash-ano-titulo').textContent = anoSelecionado || '—';
+  // (o título do gráfico de meses é escrito junto com ele, mais abaixo)
 
-  // Gráfico 1: gastos por categoria (doughnut)
+  prepararCoresGraficos();
+  // Gráfico 1: gastos por categoria (barras horizontais)
   const canvasTipo = document.getElementById('grafico-gastos-tipo');
   const vazioTipo = document.getElementById('grafico-gastos-tipo-vazio');
   const linhasCategoriaDash = agruparPorTipoEBanco(despesasDoMes).linhasCategoria;
   if (graficoGastosTipo) { graficoGastosTipo.destroy(); graficoGastosTipo = null; }
-  if (linhasCategoriaDash.length === 0) { canvasTipo.style.display = 'none'; vazioTipo.style.display = 'block'; }
+  const areaTipo = document.getElementById('area-gastos-tipo');
+  const comGasto = linhasCategoriaDash.filter(l => Number(l[1]) > 0);
+  const totalGastoCat = comGasto.reduce((s, l) => s + l[1], 0);
+  const maiorCat = comGasto.slice().sort((a, b) => b[1] - a[1])[0];
+  // Subtítulo diz o achado, não só o total
+  document.getElementById('gastos-tipo-sub').textContent = comGasto.length
+    ? 'Total do mês: ' + formatarMoeda(totalGastoCat) + ' · maior: ' + maiorCat[0] + ' (' + Math.round(maiorCat[1] / totalGastoCat * 100) + '%)' : '';
+  if (comGasto.length === 0) { areaTipo.style.display = 'none'; vazioTipo.style.display = 'block'; }
   else {
-    canvasTipo.style.display = 'block'; vazioTipo.style.display = 'none';
-    graficoGastosTipo = new Chart(canvasTipo.getContext('2d'), {
-      type: 'doughnut',
-      data: { labels: linhasCategoriaDash.map(l => l[0]), datasets: [{ data: linhasCategoriaDash.map(l => l[1]), backgroundColor: CORES_GRAFICO, borderWidth: 0, spacing: 3, borderRadius: 6, hoverOffset: 8 }] },
-      options: {
-        cutout: '68%',
-        plugins: { legend: { position: 'bottom', labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 12 } } }
-      },
-      plugins: [pluginTotalNoCentro]
+    areaTipo.style.display = 'block'; vazioTipo.style.display = 'none';
+    graficoGastosTipo = criarGraficoBarrasHorizontais(canvasTipo, areaTipo, comGasto, {
+      selecionada: filtroCategoriaDash,
+      aoClicar: (categoria) => {
+        if (categoria === 'Outras') { mostrarToast('Toque numa categoria específica para filtrar.', 'ok'); return; }
+        definirFiltroCategoriaDash(categoria);
+      }
+    });
+    canvasTipo.setAttribute('aria-label', 'Gastos por categoria em ' + nomeMesCompleto(mesSelecionado) + ': ' + comGasto.slice().sort((a, b) => b[1] - a[1]).map(l => l[0] + ' ' + formatarMoeda(l[1])).join(', '));
+  }
+
+  // Barra "Filtrando por…" e lista de lançamentos da categoria escolhida
+  document.getElementById('filtro-ativo-dash').style.display = filtroCategoriaDash ? 'flex' : 'none';
+  document.getElementById('filtro-ativo-nome').textContent = filtroCategoriaDash || '';
+  document.getElementById('dica-gastos-tipo').style.display = filtroCategoriaDash ? 'none' : (comGasto.length ? 'block' : 'none');
+  const detalhe = document.getElementById('detalhe-categoria-dash');
+  detalhe.innerHTML = '';
+  if (filtroCategoriaDash) {
+    const itensCat = despesasDoMes.filter(d => nomeCategoriaDe(d) === filtroCategoriaDash).sort((a, b) => b.valor - a.valor);
+    const titulo = document.createElement('div');
+    titulo.className = 'det-titulo';
+    titulo.textContent = itensCat.length
+      ? `${plural(itensCat.length, 'lançamento', 'lançamentos')} de ${filtroCategoriaDash} em ${nomeMesCompleto(mesSelecionado)}`
+      : `Sem gastos com ${filtroCategoriaDash} em ${nomeMesCompleto(mesSelecionado)}.`;
+    detalhe.appendChild(titulo);
+    itensCat.forEach(d => {
+      const linha = document.createElement('div');
+      linha.className = 'det-item';
+      linha.innerHTML = `<span class="det-desc">${escapeHtml(d.desc || 'Sem descrição')}<small>${escapeHtml(d.tipo || '')}${d.diaVencimento ? ' · dia ' + escapeHtml(d.diaVencimento) : ''}</small></span><b>${formatarMoeda(d.valor)}</b>`;
+      detalhe.appendChild(linha);
     });
   }
 
   // Gráfico 2: evolução receitas x despesas (últimos até 8 meses)
   // Mostra os 12 meses do ano selecionado no filtro — assim o gráfico responde
   // ao filtro de ano e dá a visão anual completa, com meses sem lançamento zerados.
-  const mesesDoAno = MESES.map(m => m + '/' + anoSelecionado);
-  const rotulosMeses = MESES.slice();
+  // No computador, os 12 meses do ano. No celular, 6 meses em volta do mês
+  // escolhido (12 barras duplas ficavam espremidas e com o rótulo inclinado).
+  let indicesMeses = MESES.map((m, i) => i);
+  if (window.matchMedia('(max-width: 640px)').matches) {
+    const idxSel = mesSelecionado && mesSelecionado.endsWith('/' + anoSelecionado) ? MESES.indexOf(mesSelecionado.split('/')[0]) : new Date().getMonth();
+    // A janela fica presa ao mês de hoje (5 meses para trás e 1 de previsão) e
+    // só anda se o mês escolhido sair dela — assim tocar num mês não "pula" as barras.
+    const idxBase = Number(anoSelecionado) === new Date().getFullYear() ? new Date().getMonth() : idxSel;
+    let inicio = Math.max(0, Math.min(idxBase - 4, 6));
+    if (idxSel < inicio || idxSel > inicio + 5) inicio = Math.max(0, Math.min(idxSel - 4, 6));
+    indicesMeses = indicesMeses.slice(inicio, inicio + 6);
+  }
+  const mesesDoAno = indicesMeses.map(i => MESES[i] + '/' + anoSelecionado);
+  const rotulosMeses = indicesMeses.map(i => MESES[i]);
   const arrDespesas = mesesDoAno.map(m => (despesasPorMes[m] || []).reduce((s, d) => s + d.valor, 0));
   const arrReceitas = mesesDoAno.map(m => (salariosPorMes[m] || []).reduce((s, sl) => s + sl.valor, 0));
   if (graficoEvolucao) { graficoEvolucao.destroy(); graficoEvolucao = null; }
+  // Meses depois de hoje são previsão (parcelas e lançamentos futuros): ficam
+  // em tom mais claro, para não parecerem dinheiro que já entrou ou saiu.
+  const hojeEvo = new Date();
+  const ehPrevisao = (i) => Number(anoSelecionado) > hojeEvo.getFullYear() || (Number(anoSelecionado) === hojeEvo.getFullYear() && indicesMeses[i] > hojeEvo.getMonth());
+  const corRec = corVarAtual('--verde'), corDesp = corVarAtual('--vermelho');
+  const saldoAno = MESES.reduce((s, m, i) => {
+    const futuro = Number(anoSelecionado) > hojeEvo.getFullYear() || (Number(anoSelecionado) === hojeEvo.getFullYear() && i > hojeEvo.getMonth());
+    if (futuro) return s;
+    const chave = m + '/' + anoSelecionado;
+    return s + (salariosPorMes[chave] || []).reduce((t, x) => t + x.valor, 0) - (despesasPorMes[chave] || []).reduce((t, x) => t + x.valor, 0);
+  }, 0);
+  document.getElementById('evolucao-sub').textContent = 'Sobra no ano até agora: ' + formatarMoeda(saldoAno) + (arrReceitas.some((v, i) => ehPrevisao(i) && (v || arrDespesas[i])) ? ' · barras claras = previsão' : '');
+  const idxMesSel = mesesDoAno.indexOf(mesSelecionado);
+  const aoClicarMes = (evento, elementos, grafico) => {
+    const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'index', { intersect: false }, false);
+    if (alvo.length) irParaMesDashboard(mesesDoAno[alvo[0].index]);
+  };
+  const tituloEvo = document.getElementById('evolucao-titulo');
+  const canvasEvo = document.getElementById('grafico-evolucao');
+  if (filtroCategoriaDash) {
+    // Filtro de categoria: o gráfico mostra quanto foi gasto com ela mês a mês
+    const corCat = corVarAtual('--grafico-categoria') || '#4C8DFF';
+    const arrCat = mesesDoAno.map(m => (despesasPorMes[m] || []).filter(d => nomeCategoriaDe(d) === filtroCategoriaDash).reduce((s, d) => s + d.valor, 0));
+    const mesesComGasto = arrCat.filter((v, i) => v > 0 && !ehPrevisao(i));
+    const media = mesesComGasto.length ? mesesComGasto.reduce((s, v) => s + v, 0) / mesesComGasto.length : 0;
+    tituloEvo.textContent = 'Gastos com ' + filtroCategoriaDash + ' em ' + anoSelecionado;
+    document.getElementById('evolucao-sub').textContent = media ? 'Média de ' + formatarMoeda(media) + ' por mês com gasto' : 'Nenhum gasto com essa categoria neste período.';
+    canvasEvo.setAttribute('aria-label', tituloEvo.textContent + ': ' + rotulosMeses.map((m, i) => m + ' ' + formatarMoeda(arrCat[i])).join(', '));
+    graficoEvolucao = new Chart(canvasEvo.getContext('2d'), {
+      type: 'bar',
+      data: { labels: rotulosMeses, datasets: [
+        { label: filtroCategoriaDash, data: arrCat, backgroundColor: arrCat.map((v, i) => ehPrevisao(i) ? comAlfa(corCat, 0.35) : corCat), borderRadius: 6, maxBarThickness: 30 }
+      ] },
+      options: {
+        onClick: aoClicarMes, onHover: cursorDeClique,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, faixaMes: { indice: idxMesSel },
+          tooltip: { callbacks: { footer: (itens) => ehPrevisao(itens[0].dataIndex) ? 'previsão' : '' } } },
+        scales: {
+          x: { ticks: { color: corSuaveAtual(), maxRotation: 0, autoSkip: true }, grid: { display: false }, border: { display: false } },
+          y: { beginAtZero: true, ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
+        }
+      },
+      plugins: [pluginFaixaMesSelecionado]
+    });
+  } else {
+  tituloEvo.innerHTML = 'Receitas x Despesas em <span id="dash-ano-titulo">' + escapeHtml(anoSelecionado || '—') + '</span>';
+  canvasEvo.setAttribute('aria-label', 'Receitas e despesas por mês em ' + anoSelecionado + ': ' + rotulosMeses.map((m, i) => m + ' receitas ' + formatarMoeda(arrReceitas[i]) + ', despesas ' + formatarMoeda(arrDespesas[i])).join('; '));
   graficoEvolucao = new Chart(document.getElementById('grafico-evolucao').getContext('2d'), {
     type: 'bar',
     data: { labels: rotulosMeses, datasets: [
-      { label: 'Receitas', data: arrReceitas, backgroundColor: corVarAtual('--verde'), borderRadius: 6, maxBarThickness: 26 },
-      { label: 'Despesas', data: arrDespesas, backgroundColor: corVarAtual('--vermelho'), borderRadius: 6, maxBarThickness: 26 }
+      { label: 'Receitas', data: arrReceitas, backgroundColor: arrReceitas.map((v, i) => ehPrevisao(i) ? comAlfa(corRec, 0.35) : corRec), borderRadius: 6, maxBarThickness: 26 },
+      { label: 'Despesas', data: arrDespesas, backgroundColor: arrDespesas.map((v, i) => ehPrevisao(i) ? comAlfa(corDesp, 0.35) : corDesp), borderRadius: 6, maxBarThickness: 26 }
     ] },
     options: {
-      plugins: { legend: { position: 'top', align: 'end', labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14 } } },
+      onClick: aoClicarMes, onHover: cursorDeClique,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        faixaMes: { indice: idxMesSel },
+        // Legenda só informa as cores: clicar nela não esconde (nem risca) nada
+        legend: { position: 'top', align: 'end', onClick: null, labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14,
+          generateLabels: (ch) => ch.data.datasets.map((d, i) => ({ text: d.label, fillStyle: i === 0 ? corRec : corDesp, strokeStyle: i === 0 ? corRec : corDesp, fontColor: corTextoAtual(), pointStyle: 'circle', hidden: false, datasetIndex: i })) } },
+        tooltip: { callbacks: { footer: (itens) => { const i = itens[0].dataIndex; return 'Saldo: ' + formatarMoeda(arrReceitas[i] - arrDespesas[i]) + (ehPrevisao(i) ? ' (previsão)' : ''); } } }
+      },
       scales: {
-        x: { ticks: { color: corSuaveAtual() }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
+        x: { ticks: { color: corSuaveAtual(), maxRotation: 0, autoSkip: true }, grid: { display: false }, border: { display: false } },
+        y: { beginAtZero: true, ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
       }
-    }
+    },
+    plugins: [pluginFaixaMesSelecionado]
   });
+  }
 
   // Gráfico 3: investido acumulado ao longo do tempo
   const mesesInvest = ordenarMeses(Object.keys(investimentosPorMes));
@@ -5106,21 +5384,33 @@ function renderizarDashboard(mesSelecionado, despesasPorMes, mesesDisponiveis, s
   if (mesesInvest.length === 0) { canvasInvest.style.display = 'none'; vazioInvest.style.display = 'block'; }
   else {
     canvasInvest.style.display = 'block'; vazioInvest.style.display = 'none';
+    // Linha contínua do primeiro aporte até o mês escolhido (meses sem aporte
+    // repetem o valor), para mostrar a evolução real — antes só apareciam os
+    // meses que tinham lançamento.
+    const primeiroMes = mesesInvest[0];
+    const ultimoMes = mesSelecionado && ordemDoMes(mesSelecionado) >= ordemDoMes(primeiroMes) ? mesSelecionado : mesesInvest[mesesInvest.length - 1];
+    const sequencia = mesesEntre(primeiroMes, ultimoMes);
     let acumulado = 0;
-    const dadosAcumulado = mesesInvest.map(m => { acumulado += (investimentosPorMes[m] || []).reduce((s, i) => s + i.valor, 0); return acumulado; });
+    const dadosAcumulado = sequencia.map(m => { acumulado += (investimentosPorMes[m] || []).reduce((s, i) => s + i.valor, 0); return acumulado; });
+    document.getElementById('investido-sub').textContent = formatarMoeda(acumulado) + ' até ' + ultimoMes;
     const ctxInvest = canvasInvest.getContext('2d');
     const gradiente = ctxInvest.createLinearGradient(0, 0, 0, 220);
     gradiente.addColorStop(0, 'rgba(245,185,66,0.35)');
     gradiente.addColorStop(1, 'rgba(245,185,66,0.02)');
     graficoInvestidoAcumulado = new Chart(ctxInvest, {
       type: 'line',
-      data: { labels: mesesInvest, datasets: [{ label: 'Acumulado', data: dadosAcumulado, borderColor: corVarAtual('--dourado'), backgroundColor: gradiente, borderWidth: 2.5, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5 }] },
+      data: { labels: sequencia.map(m => m.replace('/20', '/')), datasets: [{ label: 'Acumulado', data: dadosAcumulado, pointRadius: sequencia.length <= 12 ? 3 : 0, pointBackgroundColor: corVarAtual('--dourado'), borderColor: corVarAtual('--dourado'), backgroundColor: gradiente, borderWidth: 2.5, fill: true, tension: 0.3, cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 5 }] },
       options: {
         plugins: { legend: { display: false } },
         interaction: { intersect: false, mode: 'index' },
+        onClick: (evento, elementos, grafico) => {
+          const alvo = grafico.getElementsAtEventForMode(evento.native || evento, 'index', { intersect: false }, false);
+          if (alvo.length) irParaMesDashboard(sequencia[alvo[0].index]);
+        },
+        onHover: cursorDeClique,
         scales: {
           x: { ticks: { color: corSuaveAtual() }, grid: { display: false }, border: { display: false } },
-          y: { ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
+          y: { beginAtZero: true, ticks: { color: corSuaveAtual(), callback: (v) => formatarValorCurto(v) }, grid: { color: corBordaAtual(), drawTicks: false }, border: { display: false } }
         }
       }
     });
@@ -5259,7 +5549,7 @@ async function renderizarGraficoCompras() {
 
     const porCategoria = {};
     compradas.forEach(i => {
-      const cat = i.categoria || '(Sem categoria)';
+      const cat = i.categoria || 'Sem categoria';
       porCategoria[cat] = (porCategoria[cat] || 0) + (i.valorPago || 0);
     });
     const entradas = Object.entries(porCategoria).sort((a, b) => b[1] - a[1]);
@@ -5267,19 +5557,15 @@ async function renderizarGraficoCompras() {
     const canvas = document.getElementById('grafico-compras-categoria');
     const vazio = document.getElementById('grafico-compras-vazio');
     if (graficoComprasCategoria) { graficoComprasCategoria.destroy(); graficoComprasCategoria = null; }
-    if (entradas.length === 0) {
-      canvas.style.display = 'none'; vazio.style.display = 'block';
+    const area = document.getElementById('area-compras-categoria');
+    const comValor = entradas.filter(e => Number(e[1]) > 0);
+    if (comValor.length === 0) {
+      area.style.display = 'none'; vazio.style.display = 'block';
+    } else if (comValor.length === 1) {
+      area.style.display = 'none'; vazio.style.display = 'none';
     } else {
-      canvas.style.display = 'block'; vazio.style.display = 'none';
-      graficoComprasCategoria = new Chart(canvas.getContext('2d'), {
-        type: 'doughnut',
-        data: { labels: entradas.map(e => e[0]), datasets: [{ data: entradas.map(e => e[1]), backgroundColor: CORES_GRAFICO, borderWidth: 0, spacing: 3, borderRadius: 6, hoverOffset: 8 }] },
-        options: {
-          cutout: '68%',
-          plugins: { legend: { position: 'bottom', labels: { color: corTextoAtual(), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 12 } } }
-        },
-        plugins: [pluginTotalNoCentro]
-      });
+      area.style.display = 'block'; vazio.style.display = 'none';
+      graficoComprasCategoria = criarGraficoBarrasHorizontais(canvas, area, comValor);
     }
   } catch (e) { /* silencioso — gráfico secundário */ }
 }
@@ -5289,7 +5575,7 @@ function renderizarBarrasProgresso(idContainer, itens) {
   container.innerHTML = '';
   if (itens.length === 0) { container.innerHTML = '<div class="vazio">Nenhum dado ainda.</div>'; return; }
   itens.forEach(item => {
-    const pctVisual = item.pct === null ? 0 : Math.min(item.pct, 1) * 100;
+    const pctVisual = item.pct === null ? 0 : Math.max(0, Math.min(item.pct, 1)) * 100;
     const cor = corStatus(item.status);
     const div = document.createElement('div'); div.className = 'item-progresso';
     div.innerHTML = `
