@@ -4944,12 +4944,14 @@ function abrirModalDetalhe(titulo, itens, camposDescricao, comStatus) {
     itens.forEach(item => {
       const li = document.createElement('div'); li.className = 'lista-item';
       const principal = camposDescricao.principal(item);
+      // Ícone vem do próprio app (seguro); só o texto digitado passa pelo escape.
+      const iconeItem = camposDescricao.icone ? camposDescricao.icone(item) : '';
       const secundario = camposDescricao.secundario(item);
       const pago = item.status === 'Pago';
       const botaoStatus = comStatus
         ? `<button class="btn-status-toggle ${pago ? 'pago' : 'aberto'}" data-chave="${escapeHtml(item.chave)}">${pago ? 'Pago' : 'Em aberto'}</button>`
         : '';
-      li.innerHTML = `<div class="info"><div class="principal">${escapeHtml(principal)}</div><div class="secundario">${escapeHtml(secundario)}</div></div><div class="direita"><span class="valor">${formatarMoeda(item.valor)}</span>${botaoStatus}</div>`;
+      li.innerHTML = `<div class="info"><div class="principal">${iconeItem ? iconeItem + ' ' : ''}${escapeHtml(principal)}</div><div class="secundario">${escapeHtml(secundario)}</div></div><div class="direita"><span class="valor">${formatarMoeda(item.valor)}</span>${botaoStatus}</div>`;
       lista.appendChild(li);
     });
     if (comStatus) {
@@ -4983,7 +4985,7 @@ document.getElementById('card-clicavel-receitas').addEventListener('click', () =
 });
 document.getElementById('card-clicavel-despesas').addEventListener('click', () => {
   abrirModalDetalhe('Gastos em ' + (estadoResumoAtual.mes || '--'), estadoResumoAtual.despesasDoMes,
-    { principal: (i) => (i.dividaId ? icone('banco',14) + ' ' : '') + i.desc, secundario: (i) => [i.tipo, i.banco, i.dividaId ? 'abate na dívida' : ''].filter(Boolean).join(' • ') }, true);
+    { icone: (i) => i.dividaId ? icone('banco', 14) : '', principal: (i) => i.desc, secundario: (i) => [i.tipo, i.banco, i.dividaId ? 'abate na dívida' : ''].filter(Boolean).join(' • ') }, true);
 });
 document.getElementById('card-clicavel-investido').addEventListener('click', () => {
   abrirModalDetalhe('Investido em ' + (estadoResumoAtual.mes || '--'), estadoResumoAtual.investimentosDoMes,
