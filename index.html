@@ -3698,6 +3698,7 @@ const SUBCOLECOES_DA_CASA = ['despesas', 'salarios', 'investimentos', 'compras',
 // dono — e quem prova isso é o registro da pessoa em 'membros'. Por isso
 // 'membros' sai sempre por último, DEPOIS do documento da própria Casa.
 async function excluirTudoDaCasa(refCasa) {
+  pararEscutaDados(); // sem escuta durante a exclusão em massa
   // Cancela convites ainda não aceitos — senão a pessoa convidada veria um
   // convite para uma Casa que não existe mais.
   try {
@@ -4507,6 +4508,8 @@ function observarLogin() {
     } else {
       meuUid = null; householdId = null; dadosUsuario = null;
       if (pararDeEscutarConvites) { pararDeEscutarConvites(); pararDeEscutarConvites = null; }
+      pararEscutaDados(); falhaEscuta = null;
+      cacheDespesasRaw = []; cacheSalariosRaw = []; cacheInvestRaw = []; momentoUltimaBusca = 0; casaDoCache = null;
       notificacoesAtuais = [];
       // Vai direto pro login. Os termos aparecem antes de criar a conta por
       // e-mail e, depois do login, só se a conta ainda não aceitou a versão atual.
@@ -4609,15 +4612,25 @@ let podeEditarComprasAgora = true;
 let cacheDespesasRaw = [], cacheSalariosRaw = [], cacheInvestRaw = [];
 let estadoResumoAtual = { mes: null, despesasDoMes: [], salariosDoMes: [], investimentosDoMes: [] };
 
-// Lê os lançamentos do banco. Como isso é chamado a cada troca de aba e cada
-// listagem, guarda o resultado por alguns segundos — sem isso, navegar pelo
-// app consome centenas de leituras à toa e esgota a cota diária do Firestore.
+// Lê os lançamentos da Casa. O caminho principal é a escuta em tempo real
+// (logo abaixo): lê tudo UMA vez por Casa e depois recebe só o que mudar.
+// A leitura direta com cache curto fica como reserva, se a escuta falhar.
 let momentoUltimaBusca = 0;
+let casaDoCache = null;   // de qual Casa são os dados em memória (nunca misturar Casas)
 const VALIDADE_CACHE_MS = 20000;
 
 async function buscarTudo(forcar) {
+  if (householdId && podeUsarEscuta(householdId)) {
+    if (!escutaDados || escutaDados.casa !== householdId) {
+      pararEscutaDados();
+      escutaDados = iniciarEscutaDados(householdId);
+    }
+    const escuta = escutaDados;
+    await escuta.prontas;
+    if (escuta.ativa && escutaDados === escuta) return; // dados chegam sozinhos
+  }
   const agora = Date.now();
-  if (!forcar && momentoUltimaBusca && (agora - momentoUltimaBusca) < VALIDADE_CACHE_MS) {
+  if (!forcar && momentoUltimaBusca && casaDoCache === householdId && (agora - momentoUltimaBusca) < VALIDADE_CACHE_MS) {
     return; // dados recentes o suficiente, reaproveita
   }
   const [despesasSnap, salariosSnap, investSnap] = await Promise.all([colDespesas().get(), colSalarios().get(), colInvestimentos().get()]);
@@ -4625,10 +4638,99 @@ async function buscarTudo(forcar) {
   cacheSalariosRaw = salariosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   cacheInvestRaw = investSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   momentoUltimaBusca = agora;
+  casaDoCache = householdId;
 }
 
 // Chamado depois de gravar algo, pra próxima leitura vir do servidor.
 function invalidarCache() { momentoUltimaBusca = 0; }
+
+// ===================================================
+// ESCUTA EM TEMPO REAL DOS LANÇAMENTOS (início)
+// ===================================================
+// Antes, cada tela relia o histórico inteiro da Casa, e isso gastava a cota
+// diária do Firestore. Agora a escuta lê tudo uma vez e depois recebe só o
+// que mudar, inclusive o que outra pessoa da Casa lançar ou marcar como pago.
+let escutaDados = null;
+let falhaEscuta = null;               // { casa, quando }: evita insistir numa escuta que falhou
+let timerAtualizacaoTela = null;
+
+function podeUsarEscuta(casa) {
+  return !(falhaEscuta && falhaEscuta.casa === casa && (Date.now() - falhaEscuta.quando) < 60000);
+}
+
+function pararEscutaDados() {
+  if (!escutaDados) return;
+  const escuta = escutaDados;
+  escutaDados = null;
+  escuta.ativa = false;
+  escuta.cancelar.forEach(fn => { try { fn(); } catch (e) { /* já cancelada */ } });
+}
+
+function iniciarEscutaDados(casa) {
+  const escuta = { casa, ativa: true, cancelar: [], recebidas: new Set(), prontas: null };
+  let liberar;
+  escuta.prontas = new Promise(ok => { liberar = ok; });
+  const TOTAL = 4; // despesas, receitas, investimentos e status de pagamento
+
+  const valida = () => escuta.ativa && escuta.casa === householdId;
+  const chegou = (nome, primeira) => {
+    if (primeira) {
+      escuta.recebidas.add(nome);
+      if (escuta.recebidas.size === TOTAL) { momentoUltimaBusca = Date.now(); casaDoCache = casa; liberar(); }
+    } else {
+      agendarAtualizacaoDaTela();
+    }
+  };
+  const falhou = (nome, erro) => {
+    console.warn('Escuta de ' + nome + ' interrompida; voltando à leitura direta.', erro && erro.code);
+    falhaEscuta = { casa, quando: Date.now() };
+    momentoUltimaBusca = 0; // força a leitura direta da Casa certa
+    if (escutaDados === escuta) pararEscutaDados();
+    escuta.ativa = false;
+    liberar();
+  };
+  const ouvirColecao = (ref, nome, aplicar) => {
+    let primeira = true;
+    escuta.cancelar.push(ref.onSnapshot((snap) => {
+      if (!valida()) return; // escuta de uma Casa que já não é a ativa
+      aplicar(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      chegou(nome, primeira);
+      primeira = false;
+    }, (erro) => falhou(nome, erro)));
+  };
+
+  ouvirColecao(colDespesas(), 'despesas', lista => { cacheDespesasRaw = lista; });
+  ouvirColecao(colSalarios(), 'receitas', lista => { cacheSalariosRaw = lista; });
+  ouvirColecao(colInvestimentos(), 'investimentos', lista => { cacheInvestRaw = lista; });
+
+  let primeiraStatus = true;
+  escuta.cancelar.push(docStatusPagamento().onSnapshot((snap) => {
+    if (!valida()) return;
+    if (dadosUsuario) dadosUsuario.statusPagamento = snap.exists ? snap.data() : {};
+    chegou('status', primeiraStatus);
+    primeiraStatus = false;
+  }, (erro) => falhou('status', erro)));
+
+  return escuta;
+}
+
+// Redesenha a tela aberta quando os dados mudam. Só Início e Dashboard, que
+// são telas de leitura: num formulário, redesenhar apagaria o que a pessoa
+// está digitando. Espera um instante pra juntar várias mudanças num redesenho.
+function agendarAtualizacaoDaTela() {
+  clearTimeout(timerAtualizacaoTela);
+  timerAtualizacaoTela = setTimeout(() => {
+    const tela = document.querySelector('#tela-app-shell main > .tela.active');
+    if (!tela) return;
+    const foco = document.activeElement;
+    if (foco && tela.contains(foco) && /^(INPUT|SELECT|TEXTAREA)$/.test(foco.tagName)) return;
+    let redesenho = null;
+    if (tela.id === 'tab-inicio') redesenho = carregarInicio();
+    else if (tela.id === 'tab-dashboard') redesenho = carregarDashboard();
+    if (redesenho && redesenho.catch) redesenho.catch(() => {});
+  }, 600);
+}
+// ==== ESCUTA EM TEMPO REAL DOS LANÇAMENTOS (fim) ====
 
 // Monta o par de filtros ano + mês (mesmo modelo usado em todas as abas).
 // Devolve o mês escolhido e cuida sozinho de repopular os meses ao trocar de ano.
