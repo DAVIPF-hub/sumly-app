@@ -411,6 +411,15 @@
   .lanc-mais { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; margin-top: 14px; padding: 0 2px; background: none; border: none; border-top: 1px solid var(--borda); color: var(--texto); font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
   .lanc-mais span { color: var(--texto-suave); font-size: 12px; }
 
+  /* ---- Vídeos de ajuda ---- */
+  .lista-videos-ajuda { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 8px 0 14px; }
+  .video-ajuda { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; border: 1px solid var(--borda); background: var(--bg-elevado); color: var(--texto); text-align: left; font-family: inherit; cursor: pointer; }
+  .video-ajuda:hover { border-color: var(--azul); }
+  .video-ajuda img { width: 54px; height: 96px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: var(--bg-card); }
+  .video-ajuda strong { display: block; font-size: 13.5px; font-weight: 700; line-height: 1.3; }
+  .video-ajuda small { display: block; font-size: 12px; color: var(--texto-suave); margin-top: 4px; }
+  #video-ajuda-player { display: block; width: 100%; max-height: 72vh; border-radius: 14px; background: #000; }
+
   /* ---- Criar categoria ou tipo na hora ---- */
   .lanc-chip.lanc-chip-novo { border-style: dashed; color: var(--azul); }
   .lanc-nova { display: flex; gap: 8px; margin-top: 8px; }
@@ -1831,6 +1840,27 @@
           <button class="secundario" id="btn-rever-tour">Rever o tour guiado</button>
           <button class="secundario" id="btn-ver-relatorio">Ver fechamento do mês passado</button>
 
+          <div class="secao-titulo"><span data-icone="lampada"></span>Vídeos de ajuda</div>
+          <div class="hint">Vídeos curtos mostrando cada passo, de menos de 1 minuto.</div>
+          <div class="lista-videos-ajuda">
+            <button type="button" class="video-ajuda" data-video="como-lancar-despesa" data-titulo="Lançar uma despesa">
+              <img src="videos/como-lancar-despesa.jpg" alt="" width="54" height="96" loading="lazy">
+              <span><strong>Lançar uma despesa</strong><small>30 segundos</small></span>
+            </button>
+            <button type="button" class="video-ajuda" data-video="como-lancar-receita" data-titulo="Lançar uma receita">
+              <img src="videos/como-lancar-receita.jpg" alt="" width="54" height="96" loading="lazy">
+              <span><strong>Lançar uma receita</strong><small>29 segundos</small></span>
+            </button>
+            <button type="button" class="video-ajuda" data-video="como-cadastrar-divida" data-titulo="Cadastrar uma dívida">
+              <img src="videos/como-cadastrar-divida.jpg" alt="" width="54" height="96" loading="lazy">
+              <span><strong>Cadastrar uma dívida</strong><small>32 segundos</small></span>
+            </button>
+            <button type="button" class="video-ajuda" data-video="como-criar-tipo-de-receita" data-titulo="Criar um tipo de receita">
+              <img src="videos/como-criar-tipo-de-receita.jpg" alt="" width="54" height="96" loading="lazy">
+              <span><strong>Criar um tipo de receita</strong><small>24 segundos</small></span>
+            </button>
+          </div>
+
           <div class="secao-titulo">Privacidade e termos</div>
           <div class="hint">Seus lançamentos são acessíveis apenas por você e por quem você convidar para sua Casa.</div>
           <a class="secundario" href="privacidade.html" target="_blank" style="display:block; text-align:center; text-decoration:none;">Política de Privacidade</a>
@@ -1933,6 +1963,17 @@
       </button>
     </div>
     <div class="hint" id="exportar-status" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-video">
+  <div class="modal-conteudo">
+    <div class="modal-cabecalho">
+      <h3 id="modal-video-titulo">Vídeo de ajuda</h3>
+      <button class="fechar" id="btn-fechar-modal-video" aria-label="Fechar">&times;</button>
+    </div>
+    <video id="video-ajuda-player" controls playsinline preload="none"></video>
+    <div class="hint" id="video-ajuda-erro" style="display:none;">Não consegui carregar o vídeo. Confira a internet e tente de novo.</div>
   </div>
 </div>
 
@@ -2841,6 +2882,52 @@ document.addEventListener('click', (ev) => {
   if (painel.classList.contains('aberto') && !painel.contains(ev.target)) fecharPainelNotificacoes();
 });
 
+// ===================================================
+// NOVIDADES (aparecem para todos no sino de notificações)
+// ===================================================
+// Para anunciar algo novo, acrescente um item nesta lista e publique o
+// index.html. Cada pessoa vê a novidade uma vez, até tocar num botão dela.
+// "ate" é a data a partir da qual ela deixa de aparecer para quem ainda não viu.
+const NOVIDADES = [
+  {
+    id: '2026-11-tour-e-videos',
+    ate: '2026-12-31',
+    titulo: 'Novidade: tour novo e vídeos de ajuda',
+    texto: 'Refizemos o tour do app: agora ele mostra também como editar lançamentos, as Dívidas e os Ajustes. E criamos vídeos curtos ensinando a lançar despesas, receitas e dívidas e a criar seus próprios tipos de receita.',
+    acoes: ['tour', 'videos']
+  }
+];
+const CHAVE_NOVIDADES_LIDAS = 'sumly_novidades_lidas';
+
+function novidadesLidas() {
+  try { return JSON.parse(localStorage.getItem(CHAVE_NOVIDADES_LIDAS) || '[]'); } catch (e) { return []; }
+}
+function novidadesPendentes() {
+  const lidas = novidadesLidas();
+  const hoje = new Date().toISOString().slice(0, 10);
+  return NOVIDADES.filter(nv => !lidas.includes(nv.id) && (!nv.ate || hoje <= nv.ate));
+}
+function marcarNovidadeLida(id) {
+  try {
+    const lidas = novidadesLidas();
+    if (!lidas.includes(id)) { lidas.push(id); localStorage.setItem(CHAVE_NOVIDADES_LIDAS, JSON.stringify(lidas)); }
+  } catch (e) { /* sem armazenamento local: some só nesta sessão */ }
+  notificacoesAtuais = notificacoesAtuais.filter(n => !(n.tipo === 'novidade' && n.id === id));
+  renderizarNotificacoes();
+}
+function abrirVideosDeAjuda() {
+  mostrarTab('ajustes');
+  tourSubaba('ajuda');
+  setTimeout(() => {
+    const lista = document.querySelector('.lista-videos-ajuda');
+    if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 150);
+}
+const ACOES_NOVIDADE = {
+  tour: { rotulo: 'Fazer o tour', executar: () => iniciarTour() },
+  videos: { rotulo: 'Ver vídeos', executar: abrirVideosDeAjuda }
+};
+
 function atualizarBadgeSino() {
   const qtd = notificacoesAtuais.filter(n => n.acaoNecessaria).length;
   ['sino-badge', 'sino-badge-mobile'].forEach(id => {
@@ -2904,6 +2991,25 @@ function renderizarNotificacoes() {
       div.querySelector('.pn-corpo').appendChild(acoes);
     }
 
+    if (n.tipo === 'novidade') {
+      const acoes = document.createElement('div');
+      acoes.className = 'pn-acoes';
+      (n.acoes || []).forEach((chave, i) => {
+        const def = ACOES_NOVIDADE[chave];
+        if (!def) return;
+        const b = document.createElement('button');
+        b.className = i === 0 ? 'pn-aceitar' : 'pn-recusar';
+        b.textContent = def.rotulo;
+        b.addEventListener('click', () => { marcarNovidadeLida(n.id); fecharPainelNotificacoes(); def.executar(); });
+        acoes.appendChild(b);
+      });
+      const depois = document.createElement('button');
+      depois.className = 'pn-recusar'; depois.textContent = 'Agora não';
+      depois.addEventListener('click', (ev) => { ev.stopPropagation(); marcarNovidadeLida(n.id); });
+      acoes.appendChild(depois);
+      div.querySelector('.pn-corpo').appendChild(acoes);
+    }
+
     lista.appendChild(div);
   });
 }
@@ -2953,6 +3059,11 @@ function escutarConvites() {
 // Junta outros avisos úteis às notificações (contas vencendo, orçamento, etc.)
 function montarNotificacoesGerais(avisos) {
   notificacoesAtuais = notificacoesAtuais.filter(n => n.tipo === 'convite');
+  // Novidades do app vêm primeiro e contam no número do sino
+  novidadesPendentes().forEach(nv => notificacoesAtuais.push({
+    tipo: 'novidade', id: nv.id, acaoNecessaria: true, icone: 'lampada',
+    titulo: nv.titulo, texto: nv.texto, acoes: nv.acoes
+  }));
   (avisos || []).forEach(a => {
     notificacoesAtuais.push({
       tipo: 'aviso', acaoNecessaria: false,
@@ -7769,6 +7880,31 @@ document.getElementById('btn-salvar-salario').addEventListener('click', async (e
 });
 // ==== LANÇAMENTO DE RECEITA (fim) ====
 
+// ---------- Vídeos de ajuda (arquivos na pasta videos/ do app) ----------
+function abrirVideoAjuda(arquivo, titulo) {
+  const player = document.getElementById('video-ajuda-player');
+  document.getElementById('modal-video-titulo').textContent = titulo;
+  document.getElementById('video-ajuda-erro').style.display = 'none';
+  player.poster = 'videos/' + arquivo + '.jpg';
+  player.src = 'videos/' + arquivo + '.mp4';
+  document.getElementById('modal-video').classList.add('active');
+  const tocando = player.play();
+  if (tocando && tocando.catch) tocando.catch(() => { /* alguns celulares pedem um toque no play */ });
+}
+function fecharVideoAjuda() {
+  const player = document.getElementById('video-ajuda-player');
+  player.pause();
+  player.removeAttribute('src');
+  player.load();
+  document.getElementById('modal-video').classList.remove('active');
+}
+document.querySelectorAll('.video-ajuda').forEach(b => b.addEventListener('click', () => abrirVideoAjuda(b.dataset.video, b.dataset.titulo)));
+document.getElementById('btn-fechar-modal-video').addEventListener('click', fecharVideoAjuda);
+document.getElementById('modal-video').addEventListener('click', (ev) => { if (ev.target.id === 'modal-video') fecharVideoAjuda(); });
+document.getElementById('video-ajuda-player').addEventListener('error', (ev) => {
+  if (ev.currentTarget.getAttribute('src')) document.getElementById('video-ajuda-erro').style.display = 'block';
+});
+
 // Chip "+ Nova..." que abre um campo para criar o item na hora
 function chipNovo(rotulo, idLinha, idCampo) {
   const b = document.createElement('button');
@@ -10613,8 +10749,8 @@ const PASSOS_TOUR = [
   },
   {
     titulo: 'Pronto para começar',
-    texto: 'Para rever este tour, é só tocar aqui, em Ajustes, na aba Ajuda. Agora é com você: que tal lançar o seu primeiro gasto?',
-    aba: 'ajustes', antes: () => tourSubaba('ajuda'), alvo: '#btn-rever-tour'
+    texto: 'Aqui, em Ajustes, na aba Ajuda, ficam vídeos curtos de cada lançamento e o botão para rever este tour. Agora é com você: que tal lançar o seu primeiro gasto?',
+    aba: 'ajustes', antes: () => tourSubaba('ajuda'), alvo: '.lista-videos-ajuda'
   }
 ];
 
@@ -10703,6 +10839,8 @@ function fecharTour() {
   document.getElementById('tour-overlay').classList.remove('ativo');
   document.getElementById('tour-balao').classList.remove('ativo');
   localStorage.setItem(CHAVE_TOUR_VISTO, 'true');
+  // Quem acabou de fazer o tour já viu o que as novidades do tour anunciam
+  NOVIDADES.filter(nv => (nv.acoes || []).includes('tour')).forEach(nv => marcarNovidadeLida(nv.id));
   alternarFormLancamento('despesa');
   aplicarModoLancamento(true);
   // Quem ainda não lançou nada termina o tour já na tela de lançar

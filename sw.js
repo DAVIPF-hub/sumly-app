@@ -34,6 +34,10 @@ self.addEventListener("fetch", (event) => {
   // sempre precisa ser dado ao vivo.
   if (url.hostname !== self.location.hostname) return;
 
+  // Vídeos de ajuda: o navegador busca direto, em pedaços (sem passar pelo
+  // service worker, que atrapalha a reprodução no Safari do iPhone)
+  if (url.pathname.includes("/videos/")) return;
+
   const ehPaginaPrincipal =
     event.request.mode === "navigate" ||
     url.pathname.endsWith("/") ||
