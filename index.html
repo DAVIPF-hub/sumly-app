@@ -411,6 +411,11 @@
   .lanc-mais { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; margin-top: 14px; padding: 0 2px; background: none; border: none; border-top: 1px solid var(--borda); color: var(--texto); font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
   .lanc-mais span { color: var(--texto-suave); font-size: 12px; }
 
+  /* ---- Criar categoria ou tipo na hora ---- */
+  .lanc-chip.lanc-chip-novo { border-style: dashed; color: var(--azul); }
+  .lanc-nova { display: flex; gap: 8px; margin-top: 8px; }
+  .lanc-nova button { flex-shrink: 0; width: auto; margin: 0; padding: 0 16px; }
+
   /* ---- Exportar relatório ---- */
   .dash-filtros { flex-wrap: wrap; }
   .dash-exportar { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--borda); background: var(--bg-card); color: var(--texto); font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
@@ -1384,7 +1389,7 @@
               <div id="lanc-credito">
                 <div class="lanc-rotulo" id="lbl-cartao">Qual cartão?</div>
                 <div class="lanc-cartoes" id="lanc-cartoes" role="group" aria-labelledby="lbl-cartao"></div>
-                <div class="hint" id="lanc-sem-cartao" style="display:none;">Você ainda não cadastrou nenhum cartão. <button type="button" class="lr-link" id="btn-lanc-novo-cartao" style="margin-top:0;">Cadastrar cartão</button></div>
+                <div class="hint" id="lanc-sem-cartao" style="display:none;">Pode lançar assim mesmo: a compra entra no mês da data. Se cadastrar o cartão, o app calcula a fatura sozinho. <button type="button" class="lr-link" id="btn-lanc-novo-cartao" style="margin-top:0;">Cadastrar cartão</button></div>
                 <div class="lanc-grid2">
                   <div>
                     <label for="d-data-compra">Data da compra</label>
@@ -1405,6 +1410,10 @@
 
             <div class="lanc-rotulo" id="lbl-categoria-lanc">Categoria</div>
             <div class="lanc-chips" id="lanc-chips-categoria" role="group" aria-labelledby="lbl-categoria-lanc"></div>
+            <div class="lanc-nova" id="lanc-nova-categoria" style="display:none;">
+              <input type="text" id="input-nova-categoria" maxlength="30" placeholder="Ex: Farmácia, Academia" aria-label="Nome da nova categoria">
+              <button type="button" class="secundario" id="btn-salvar-nova-categoria">Adicionar</button>
+            </div>
             <div class="hint">No que foi o gasto. É por aqui que o orçamento é controlado.</div>
 
             <button type="button" class="lanc-mais" id="btn-lanc-detalhes" aria-expanded="false" aria-controls="lanc-detalhes">Mais detalhes (opcional) <span id="lanc-detalhes-texto">Abrir</span></button>
@@ -1453,6 +1462,10 @@
 
             <div class="lanc-rotulo" id="lbl-tipo-receita">Tipo de receita</div>
             <div class="lanc-chips" id="rec-chips-tipo" role="group" aria-labelledby="lbl-tipo-receita"></div>
+            <div class="lanc-nova" id="rec-novo-tipo" style="display:none;">
+              <input type="text" id="input-novo-tipo-receita" maxlength="30" placeholder="Ex: Pensão, Comissão" aria-label="Nome do novo tipo de receita">
+              <button type="button" class="secundario" id="btn-salvar-novo-tipo-receita">Adicionar</button>
+            </div>
 
             <div class="lanc-bloco">
               <div class="lanc-rotulo" id="lbl-frequencia">Com que frequência?</div>
@@ -3789,7 +3802,7 @@ async function carregarDadosUsuario() {
     docConfig().get(), docOrcamento().get(), docMetasInvest().get(), docStatusPagamento().get(), docMeuMembro().get(), refHousehold().get()
   ]);
   dadosUsuario = {
-    config: configSnap.exists ? configSnap.data() : CONFIG_PADRAO,
+    config: configComPadroes(configSnap.exists ? configSnap.data() : null),
     orcamento: orcamentoSnap.exists ? orcamentoSnap.data() : {},
     metasInvestimento: metasSnap.exists ? metasSnap.data() : { porTipo: {}, porBanco: {} },
     statusPagamento: statusSnap.exists ? statusSnap.data() : {}
@@ -3908,6 +3921,68 @@ function bloquearPorPlano(motivo) {
   document.getElementById('paywall-motivo').textContent = motivo;
   renderizarIcones(document.getElementById('modal-paywall'));
   document.getElementById('modal-paywall').classList.add('active');
+}
+
+// Junta a configuração salva com os padrões. Lista que estiver faltando ou
+// vazia volta com os itens padrão: assim ninguém fica sem categoria ou tipo
+// de receita para escolher, mesmo sem nunca ter aberto os Ajustes.
+function configComPadroes(salva) {
+  const config = { ...CONFIG_PADRAO, ...(salva || {}) };
+  ['tiposDespesa', 'bancosDespesa', 'tiposInvestimento', 'bancosInvestimento', 'tiposReceita', 'categoriasDespesa', 'categoriasCompras']
+    .forEach(chave => {
+      if (!Array.isArray(config[chave]) || config[chave].length === 0) config[chave] = [...CONFIG_PADRAO[chave]];
+    });
+  if (!Array.isArray(config.cartoes)) config.cartoes = [];
+  return config;
+}
+
+// O lançamento rápido aprende com o histórico. Antes de 10 lançamentos ele
+// não tem com o que aprender, então o app abre direto no formulário completo.
+const MINIMO_PARA_LANCAMENTO_RAPIDO = 10;
+const CHAVE_RAPIDO_BLOQUEADO = 'sumly_rapido_bloqueado_visto';
+const CHAVE_RAPIDO_AVISADO = 'sumly_rapido_liberado_avisado';
+function totalDeLancamentos() { return (cacheDespesasRaw || []).length + (cacheSalariosRaw || []).length; }
+function lancamentoRapidoLiberado() { return totalDeLancamentos() >= MINIMO_PARA_LANCAMENTO_RAPIDO; }
+
+function aplicarModoLancamento(forcar) {
+  const rapido = document.getElementById('lancamento-rapido');
+  const completo = document.getElementById('form-despesa-completo');
+  const voltar = document.getElementById('btn-voltar-rapido');
+  if (!rapido || !completo) return;
+  const liberado = lancamentoRapidoLiberado();
+  if (voltar) voltar.style.display = liberado ? '' : 'none';
+  if (!liberado) {
+    rapido.style.display = 'none';
+    completo.style.display = 'block';
+    try { localStorage.setItem(CHAVE_RAPIDO_BLOQUEADO, '1'); } catch (e) {}
+    return;
+  }
+  // Liberado: abre no rápido, a não ser que a pessoa já esteja preenchendo o completo
+  const preenchendo = completo.style.display !== 'none'
+    && (document.getElementById('d-valor').value || document.getElementById('d-desc').value);
+  if (forcar || !preenchendo) { completo.style.display = 'none'; rapido.style.display = 'block'; }
+  try {
+    if (localStorage.getItem(CHAVE_RAPIDO_BLOQUEADO) && !localStorage.getItem(CHAVE_RAPIDO_AVISADO)) {
+      localStorage.setItem(CHAVE_RAPIDO_AVISADO, '1');
+      mostrarToast('Lançamento rápido liberado! Agora dá pra digitar, por exemplo, "mercado 50", e o Sumly preenche o resto.', 'ok');
+    }
+  } catch (e) {}
+}
+
+// Quem pode criar categoria ou tipo de receita na hora, direto no formulário
+function podeCadastrarListas() {
+  return meuPapel === 'dono' || !!(minhasPermissoes && minhasPermissoes.financas && minhasPermissoes.financas.editar);
+}
+
+// Acrescenta um item numa lista da configuração (sem repetir) e devolve o nome salvo
+async function adicionarItemNaLista(chave, nome) {
+  const limpo = String(nome || '').trim().replace(/\s+/g, ' ');
+  if (!limpo) { mostrarToast('Digite um nome.', 'erro'); return null; }
+  const lista = dadosUsuario.config[chave] || [];
+  const existente = lista.find(x => x.toLowerCase() === limpo.toLowerCase());
+  if (existente) return existente;
+  await salvarConfig({ ...dadosUsuario.config, [chave]: [...lista, limpo] });
+  return limpo;
 }
 
 async function salvarConfig(novoConfig) { await docConfig().set(novoConfig); dadosUsuario.config = novoConfig; }
@@ -6862,11 +6937,10 @@ function carregarFormularios() {
   popularSelectDividas();
 
   // Volta sempre pro modo rápido e recalcula os atalhos com base no histórico
-  document.getElementById('lancamento-rapido').style.display = 'block';
-  document.getElementById('form-despesa-completo').style.display = 'none';
+  aplicarModoLancamento(true);
   document.getElementById('lr-sugestao').textContent = '';
   definirEssencialidadeRapida('variavel');
-  buscarTudo().then(renderizarAtalhosRapidos).catch(() => {});
+  buscarTudo().then(() => { renderizarAtalhosRapidos(); aplicarModoLancamento(false); }).catch(() => {});
 }
 
 // Mostra o campo de data só quando um cartão está escolhido, e já avisa em qual
@@ -7374,6 +7448,7 @@ function renderizarLancamento() {
     b.addEventListener('click', () => { lanc.categoria = lanc.categoria === cat ? '' : cat; renderizarLancamento(); });
     boxCat.appendChild(b);
   });
+  if (podeCadastrarListas()) boxCat.appendChild(chipNovo('+ Nova categoria', 'lanc-nova-categoria', 'input-nova-categoria'));
 
   // Mais detalhes
   mostrarBloco('lanc-detalhes', lanc.detalhes);
@@ -7482,17 +7557,19 @@ document.getElementById('btn-salvar-despesa').addEventListener('click', async (e
 
   if (forma === 'credito') {
     const cartao = lanc.cartaoId ? buscarCartao(lanc.cartaoId) : null;
+    const temCartoes = (dadosUsuario.config.cartoes || []).length > 0;
     const dataCompra = document.getElementById('d-data-compra').value;
-    if (!cartao) { mostrarToast('Escolha o cartão da compra.', 'erro'); return; }
+    // Sem cartão cadastrado, a compra entra no mês da data (sem cálculo de fatura)
+    if (!cartao && temCartoes) { mostrarToast('Escolha o cartão da compra.', 'erro'); return; }
     if (!dataCompra) { mostrarToast('Informe a data da compra.', 'erro'); return; }
     const recorrente = document.getElementById('d-recorrente').checked;
     dados = {
       mesAno: inputMonthParaMesAno(dataCompra.slice(0, 7)),
       tipo: 'Cartão',
-      banco: cartao.nome || '',
-      cartaoId: cartao.id,
+      banco: cartao ? (cartao.nome || '') : '',
+      cartaoId: cartao ? cartao.id : null,
       dataCompra: dataCompra + 'T12:00:00',
-      diaVencimento: diaVencimentoDoCartao(cartao.id),
+      diaVencimento: cartao ? diaVencimentoDoCartao(cartao.id) : null,
       parcelas: recorrente ? 1 : lanc.parcelas,
       recorrente
     };
@@ -7594,6 +7671,7 @@ function renderizarReceita() {
     });
     boxTipos.appendChild(b);
   });
+  if (podeCadastrarListas()) boxTipos.appendChild(chipNovo('+ Novo tipo', 'rec-novo-tipo', 'input-novo-tipo-receita'));
 
   // Frequência
   document.querySelectorAll('#form-salario .lanc-dupla button').forEach(b => marcarBotao(b, b.dataset.frequencia === rec.frequencia));
@@ -7690,6 +7768,45 @@ document.getElementById('btn-salvar-salario').addEventListener('click', async (e
   }
 });
 // ==== LANÇAMENTO DE RECEITA (fim) ====
+
+// Chip "+ Nova..." que abre um campo para criar o item na hora
+function chipNovo(rotulo, idLinha, idCampo) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'lanc-chip lanc-chip-novo'; b.textContent = rotulo;
+  b.addEventListener('click', () => {
+    const linha = document.getElementById(idLinha);
+    const abrir = linha.style.display === 'none';
+    linha.style.display = abrir ? 'flex' : 'none';
+    if (abrir) document.getElementById(idCampo).focus();
+  });
+  return b;
+}
+
+function ligarCriacaoNaHora(idBotao, idCampo, idLinha, chave, aoCriar, rotulo) {
+  const salvar = async () => {
+    const campo = document.getElementById(idCampo);
+    const botao = document.getElementById(idBotao);
+    botao.disabled = true;
+    try {
+      const nome = await adicionarItemNaLista(chave, campo.value);
+      if (!nome) return;
+      campo.value = '';
+      document.getElementById(idLinha).style.display = 'none';
+      aoCriar(nome);
+      mostrarToast(rotulo + ' "' + nome + '" criado.', 'ok');
+    } catch (e) {
+      mostrarToast('Erro: ' + mensagemErroAmigavel(e), 'erro');
+    } finally {
+      botao.disabled = false;
+    }
+  };
+  document.getElementById(idBotao).addEventListener('click', salvar);
+  document.getElementById(idCampo).addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); salvar(); } });
+}
+ligarCriacaoNaHora('btn-salvar-nova-categoria', 'input-nova-categoria', 'lanc-nova-categoria', 'categoriasDespesa',
+  (nome) => { lanc.categoria = nome; renderizarLancamento(); }, 'Categoria');
+ligarCriacaoNaHora('btn-salvar-novo-tipo-receita', 'input-novo-tipo-receita', 'rec-novo-tipo', 'tiposReceita',
+  (nome) => { rec.tipo = nome; rec.frequencia = frequenciaSugerida(nome); renderizarReceita(); }, 'Tipo de receita');
 
 // ===================================================
 // INVESTIMENTOS
@@ -10421,31 +10538,83 @@ const CHAVE_TOUR_VISTO = 'sumly_tour_visto_v2';
 // Cada passo pode levar a pessoa até uma aba e destacar um elemento real da
 // tela. "alvo" é o seletor do que será iluminado; "aba" é pra onde navegar
 // antes de mostrar; "antes" roda uma preparação (abrir um formulário, por ex).
+// Ajudantes do tour: deixam a tela no estado certo antes de destacar
+function tourFormularioDespesa() {
+  alternarFormLancamento('despesa');
+  document.getElementById('lancamento-rapido').style.display = 'none';
+  document.getElementById('form-despesa-completo').style.display = 'block';
+}
+function tourFormularioReceita() { alternarFormLancamento('salario'); }
+function tourRecentes() {
+  alternarFormLancamento('despesa');
+  const lista = document.getElementById('lista-historico-despesa');
+  if (lista && lista.style.display === 'none') document.getElementById('btn-toggle-historico-despesa').click();
+}
+function tourSubaba(nome) {
+  const b = document.querySelector('.subnav-btn[data-subtab="' + nome + '"]');
+  if (b) b.click();
+}
+
 const PASSOS_TOUR = [
   {
     titulo: 'Bem-vindo ao Sumly!',
-    texto: 'Em 5 passos rápidos você conhece o essencial. Dá para pular agora e rever depois em Mais → Ajuda.',
+    texto: 'Em 1 minuto você vê onde fica cada coisa. O app já vem com categorias e tipos de receita prontos: dá pra começar a lançar agora, sem cadastrar nada antes.',
     aba: 'inicio'
   },
   {
-    titulo: 'Seu mês num relance',
-    texto: 'Quanto entrou, saiu, sobrou e foi investido. Use as setas ‹ › para trocar de mês e toque num número para ver os lançamentos.',
+    titulo: 'O seu mês num relance',
+    texto: 'Aqui aparecem quanto entrou, quanto saiu e quanto sobrou no mês. Use as setas para trocar de mês e toque num valor para ver os lançamentos dele.',
     aba: 'inicio', alvo: '.cards-resumo-grid'
   },
   {
-    titulo: 'Lançar é rápido',
-    texto: 'Digite o que foi e o valor — o Sumly aprende com seu histórico e preenche o resto. Para dinheiro que entra, toque em Receita.',
-    aba: 'despesa', alvo: '#lancamento-rapido'
+    titulo: 'Despesa ou receita?',
+    texto: 'Para lançar, comece por aqui. Despesa é dinheiro que sai, como mercado e contas. Receita é dinheiro que entra, como salário e vendas.',
+    aba: 'despesa', antes: tourFormularioDespesa, alvo: '#tab-despesa .toggle-duas'
   },
   {
-    titulo: 'Entenda para onde vai',
-    texto: 'Em Início → Análises ficam os gráficos por categoria, as faturas dos cartões e a regra 50/30/20.',
+    titulo: 'Como você pagou',
+    texto: 'Escolha Pix, crédito, débito ou boleto. O formulário mostra só os campos daquela forma de pagamento. No cartão, o app calcula em qual fatura a compra cai.',
+    aba: 'despesa', antes: tourFormularioDespesa, alvo: '.forma-pag'
+  },
+  {
+    titulo: 'Categorias prontas',
+    texto: 'Toque na categoria do gasto. Faltou alguma? Toque em + Nova categoria e crie a sua na hora.',
+    aba: 'despesa', antes: tourFormularioDespesa, alvo: '#lanc-chips-categoria'
+  },
+  {
+    titulo: 'Lançando uma receita',
+    texto: 'Em Receita, escolha o tipo. Salário, Freela, Aluguel e outros já vêm prontos. Para um tipo seu, como pensão ou comissão, toque em + Novo tipo.',
+    aba: 'despesa', antes: tourFormularioReceita, alvo: '#rec-chips-tipo'
+  },
+  {
+    titulo: 'Corrigir ou apagar',
+    texto: 'Tudo o que você lança fica em Despesas recentes e Receitas recentes. Toque em mostrar: em cada lançamento, Editar corrige e a lixeira apaga.',
+    aba: 'despesa', antes: tourRecentes, alvo: '#historico-despesa-coluna'
+  },
+  {
+    titulo: 'Para onde vai o dinheiro',
+    texto: 'Em Análises ficam os gráficos por categoria, as faturas dos cartões e a regra 50/30/20.',
     aba: 'dashboard', alvo: '#tab-dashboard .seg-inicio'
   },
   {
-    titulo: 'Use junto com sua família',
-    texto: 'Em Mais → Ajustes → Casa você convida quem mora com você e escolhe o que cada um vê ou edita. Dívidas também ficam em Mais.',
-    aba: 'inicio', alvo: '#nav-btn-mais, #btn-user-menu'
+    titulo: 'Dívidas e parcelamentos',
+    texto: 'Tem empréstimo, financiamento ou acordo parcelado? Cadastre em Dívidas, no menu Mais, e acompanhe quanto já pagou e quanto falta.',
+    aba: 'dividas', alvo: '#btn-nova-divida'
+  },
+  {
+    titulo: 'Personalize quando quiser',
+    texto: 'Em Ajustes, na aba Cadastros, você muda categorias, tipos de receita, bancos, cartões e o orçamento. Nada disso é obrigatório para começar.',
+    aba: 'ajustes', antes: () => tourSubaba('cadastros'), alvo: '.subnav-btn[data-subtab="cadastros"]'
+  },
+  {
+    titulo: 'Use em família',
+    texto: 'Em Ajustes, na aba Casa, você convida quem mora com você e escolhe quem pode editar e quem só pode ver.',
+    aba: 'ajustes', antes: () => tourSubaba('casa'), alvo: '.subnav-btn[data-subtab="casa"]'
+  },
+  {
+    titulo: 'Pronto para começar',
+    texto: 'Para rever este tour, é só tocar aqui, em Ajustes, na aba Ajuda. Agora é com você: que tal lançar o seu primeiro gasto?',
+    aba: 'ajustes', antes: () => tourSubaba('ajuda'), alvo: '#btn-rever-tour'
   }
 ];
 
@@ -10534,7 +10703,10 @@ function fecharTour() {
   document.getElementById('tour-overlay').classList.remove('ativo');
   document.getElementById('tour-balao').classList.remove('ativo');
   localStorage.setItem(CHAVE_TOUR_VISTO, 'true');
-  mostrarTab('inicio');
+  alternarFormLancamento('despesa');
+  aplicarModoLancamento(true);
+  // Quem ainda não lançou nada termina o tour já na tela de lançar
+  mostrarTab(totalDeLancamentos() === 0 ? 'despesa' : 'inicio');
 }
 
 async function iniciarTour() {
