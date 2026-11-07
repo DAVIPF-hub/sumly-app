@@ -36,7 +36,7 @@ self.addEventListener("fetch", (event) => {
 
   // Vídeos de ajuda: o navegador busca direto, em pedaços (sem passar pelo
   // service worker, que atrapalha a reprodução no Safari do iPhone)
-  if (url.pathname.includes("/videos/")) return;
+  if (/\.(mp4|webm)$/i.test(url.pathname)) return;
 
   const ehPaginaPrincipal =
     event.request.mode === "navigate" ||

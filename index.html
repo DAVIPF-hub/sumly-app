@@ -1844,19 +1844,19 @@
           <div class="hint">Vídeos curtos mostrando cada passo, de menos de 1 minuto.</div>
           <div class="lista-videos-ajuda">
             <button type="button" class="video-ajuda" data-video="como-lancar-despesa" data-titulo="Lançar uma despesa">
-              <img src="videos/como-lancar-despesa.jpg" alt="" width="54" height="96" loading="lazy">
+              <img src="como-lancar-despesa.jpg" alt="" width="54" height="96" loading="lazy">
               <span><strong>Lançar uma despesa</strong><small>30 segundos</small></span>
             </button>
             <button type="button" class="video-ajuda" data-video="como-lancar-receita" data-titulo="Lançar uma receita">
-              <img src="videos/como-lancar-receita.jpg" alt="" width="54" height="96" loading="lazy">
+              <img src="como-lancar-receita.jpg" alt="" width="54" height="96" loading="lazy">
               <span><strong>Lançar uma receita</strong><small>29 segundos</small></span>
             </button>
             <button type="button" class="video-ajuda" data-video="como-cadastrar-divida" data-titulo="Cadastrar uma dívida">
-              <img src="videos/como-cadastrar-divida.jpg" alt="" width="54" height="96" loading="lazy">
+              <img src="como-cadastrar-divida.jpg" alt="" width="54" height="96" loading="lazy">
               <span><strong>Cadastrar uma dívida</strong><small>32 segundos</small></span>
             </button>
             <button type="button" class="video-ajuda" data-video="como-criar-tipo-de-receita" data-titulo="Criar um tipo de receita">
-              <img src="videos/como-criar-tipo-de-receita.jpg" alt="" width="54" height="96" loading="lazy">
+              <img src="como-criar-tipo-de-receita.jpg" alt="" width="54" height="96" loading="lazy">
               <span><strong>Criar um tipo de receita</strong><small>24 segundos</small></span>
             </button>
           </div>
@@ -7880,13 +7880,13 @@ document.getElementById('btn-salvar-salario').addEventListener('click', async (e
 });
 // ==== LANÇAMENTO DE RECEITA (fim) ====
 
-// ---------- Vídeos de ajuda (arquivos na pasta videos/ do app) ----------
+// ---------- Vídeos de ajuda (arquivos .mp4 e .jpg na raiz do site) ----------
 function abrirVideoAjuda(arquivo, titulo) {
   const player = document.getElementById('video-ajuda-player');
   document.getElementById('modal-video-titulo').textContent = titulo;
   document.getElementById('video-ajuda-erro').style.display = 'none';
-  player.poster = 'videos/' + arquivo + '.jpg';
-  player.src = 'videos/' + arquivo + '.mp4';
+  player.poster = arquivo + '.jpg';   // os vídeos e as capas ficam na raiz do site
+  player.src = arquivo + '.mp4';
   document.getElementById('modal-video').classList.add('active');
   const tocando = player.play();
   if (tocando && tocando.catch) tocando.catch(() => { /* alguns celulares pedem um toque no play */ });
